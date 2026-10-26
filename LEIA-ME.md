@@ -9,10 +9,10 @@ O vocabulário está em [`GLOSSARY.md`](GLOSSARY.md). As decisões e o motivo de
 | Tela | Para quê |
 |---|---|
 | **Agenda** | Com quem falar hoje. Mostra:<br>• recompra: profissional há 60+ dias sem venda (o prazo é ajustável);<br>• contatos agendados;<br>• pós-entrega: confirmar com o Dono da Obra quem é o pedreiro;<br>• obras que ainda não chegaram na laje.<br>Cada item tem um botão de WhatsApp e o registro do contato. |
-| **Profissionais** | Cadastro com Categoria, comissão padrão (Fixa ou Percentual), chave PIX e prazo de recompra próprio. Na ficha de cada um: obras, histórico de contatos e extrato de comissões. |
+| **Profissionais** | Cadastro com Categoria, gratificação padrão (Fixa ou Percentual), chave PIX e prazo de recompra próprio. Na ficha de cada um: obras, histórico de contatos e extrato de gratificações. |
 | **Obras** | Funil por status: em andamento, orçada, fechada, perdida (com o motivo) ou entregue. Registra o papel do profissional em cada obra (Indicador, Comprador ou Profissional da Obra). |
-| **Conciliação** | Fila dos pedidos fechados no app. Liga cada pedido a uma obra, calcula a comissão e sinaliza valor **divergente** e **profissional omitido**. |
-| **Comissões** | Extrato geral. A comissão passa de "aguardando" para "a pagar" quando o cliente quita, e de "a pagar" para "paga" com o comprovante do PIX. Só o Gerencial paga, ajusta ou cancela. |
+| **Conciliação** | Fila dos pedidos fechados no app. Liga cada pedido a uma obra, calcula a gratificação e sinaliza valor **divergente** e **profissional omitido**. |
+| **Gratificações** | Extrato geral. A gratificação passa de "aguardando" para "a pagar" quando o cliente quita, e de "a pagar" para "paga" com o comprovante do PIX. Só o Gerencial paga, ajusta ou cancela. |
 | **Configurações** | Só para o Gerencial: prazos, % padrão, regra do Profissional da Obra e categorias. |
 
 Ficam para a **v2**: o papel *Recomendado* (a fábrica indicar mão de obra) e a Conciliação automática.
@@ -57,8 +57,8 @@ integracao-app/                 mudanças e código para o app comercial
 
 ## Regras que o banco garante (não dependem da tela)
 - Quem não é operador não lê nem grava nada do CRM.
-- Só o Gerencial altera valores de comissão, registra pagamento, cancela ou muda as regras.
-- A comissão só pode ser paga depois que o Dono da Obra quitou o pedido.
-- O Comprador nunca gera comissão. O Profissional da Obra só gera se a regra estiver ligada.
-- A Comissão Percentual é calculada sobre os produtos, sem o frete.
+- Só o Gerencial altera valores de gratificação, registra pagamento, cancela ou muda as regras.
+- A gratificação só pode ser paga depois que o Dono da Obra quitou o pedido.
+- O Comprador nunca gera gratificação. O Profissional da Obra só gera se a regra estiver ligada.
+- A Gratificação Percentual é calculada sobre os produtos, sem o frete.
 - Um pedido não pode ser conciliado duas vezes.

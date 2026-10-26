@@ -30,8 +30,8 @@ export default function Comissoes() {
     <>
       <div className="head">
         <div>
-          <h1>Comissões</h1>
-          <p className="sub">Extrato geral. A comissão só fica liberada para pagamento depois que o Dono da Obra quita o pedido.</p>
+          <h1>Gratificações</h1>
+          <p className="sub">Extrato geral. A gratificação só fica liberada para pagamento depois que o Dono da Obra quita o pedido.</p>
         </div>
       </div>
 
@@ -51,7 +51,7 @@ export default function Comissoes() {
       </div>
 
       <Carregando carregando={carregando && !data} erro={erro} />
-      {data && lista.length === 0 && <div className="card empty">Nenhuma comissão aqui.</div>}
+      {data && lista.length === 0 && <div className="card empty">Nenhuma gratificação aqui.</div>}
       {lista.length > 0 && (
         <div className="card" style={{ padding: 0 }}>
           {lista.map((k) => (
@@ -61,7 +61,7 @@ export default function Comissoes() {
                   <Link to={`/profissionais/${k.profissional.id}`}><b>{k.profissional.nome}</b></Link>
                   <CorStatusComissao s={k.status} />
                   {k.divergente && <span className="badge warn">Divergente: combinado {brl(k.valor_combinado)}</span>}
-                  {k.profissional_omitido && <span className="badge bad">Omitido — representante perde comissão</span>}
+                  {k.profissional_omitido && <span className="badge bad">Omitido — representante não recebe por esta venda</span>}
                 </div>
                 <div className="small">Obra de {k.obra?.dono_nome || '—'} {k.obra?.endereco && `· ${k.obra.endereco}`}</div>
                 <div className="muted small">
@@ -107,7 +107,7 @@ function QuitouModal({ k, onClose, onDone }) {
     <Modal titulo="Cliente quitou o pedido" onClose={onClose}>
       <form className="stack" onSubmit={salvar}>
         <Erro msg={erro} />
-        <p className="muted" style={{ margin: 0 }}>Confirme que {k.obra?.dono_nome || 'o Dono da Obra'} pagou tudo. A comissão de {brl(k.valor)} passa para “A pagar”.</p>
+        <p className="muted" style={{ margin: 0 }}>Confirme que {k.obra?.dono_nome || 'o Dono da Obra'} pagou tudo. A gratificação de {brl(k.valor)} passa para “A pagar”.</p>
         <label>Data da quitação<input type="date" value={data} max={hoje()} onChange={(e) => setData(e.target.value)} required /></label>
         <div className="foot"><button type="button" className="btn" onClick={onClose}>Cancelar</button><button className="btn primary" disabled={ocupado}>Confirmar</button></div>
       </form>
@@ -163,14 +163,14 @@ function AjustarModal({ k, onClose, onDone }) {
     avisar(); onDone(); onClose()
   })
   return (
-    <Modal titulo={`Ajustar comissão — ${k.profissional.nome}`} onClose={onClose}>
+    <Modal titulo={`Ajustar gratificação — ${k.profissional.nome}`} onClose={onClose}>
       <div className="stack">
         <Erro msg={erro} />
         {k.divergente && <div className="alert warn">Valor combinado na obra: {brl(k.valor_combinado)}. Valor do pedido: {brl(k.valor)}.</div>}
         <label>Valor (R$)<input type="number" step="0.01" min="0" value={valor} onChange={(e) => setValor(e.target.value)} /></label>
         <label>Motivo do ajuste<input value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Ex.: conferido com o vendedor" /></label>
         <div className="foot">
-          <button className="btn danger" disabled={ocupado} onClick={() => salvar('cancelada')}>Cancelar comissão</button>
+          <button className="btn danger" disabled={ocupado} onClick={() => salvar('cancelada')}>Cancelar gratificação</button>
           <button className="btn primary" disabled={ocupado} onClick={() => salvar(k.status)}>Salvar valor</button>
         </div>
       </div>

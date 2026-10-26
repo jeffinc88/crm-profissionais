@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase, q } from '../supabase'
-import { useCarregar, Carregando, BotaoWhats } from '../components/ui'
+import { useCarregar, Carregando, BotaoWhats, Modal } from '../components/ui'
 import { ContatoModal, ProfissionalModal, ObraModal } from '../components/forms'
 import { brl, dataBR, formataTelefone, PAPEL, CANAIS } from '../util'
 import { CorStatusObra, CorStatusComissao } from './Obras'
+import Historico from '../components/Historico'
+import { linkWhats } from '../util'
 
 export default function ProfissionalDetalhe() {
   const { id } = useParams()
@@ -37,6 +39,7 @@ export default function ProfissionalDetalhe() {
         </div>
         <div className="row">
           <BotaoWhats telefone={p.telefone} sm={false} />
+          <button className="btn" onClick={() => setModal('link')}>Link de indicação</button>
           <button className="btn" onClick={() => setModal('contato')}>Registrar contato</button>
           <button className="btn" onClick={() => setModal('editar')}>Editar</button>
         </div>
@@ -45,13 +48,13 @@ export default function ProfissionalDetalhe() {
       <div className="kpis">
         <div className="kpi"><b>{p.vendas_total}</b><span>Vendas originadas</span></div>
         <div className="kpi"><b>{p.ultima_venda ? `${p.dias_sem_venda} d` : '—'}</b><span>Desde a última venda (alerta em {p.prazo_efetivo} d)</span></div>
-        <div className="kpi"><b>{brl(p.comissao_a_pagar)}</b><span>Comissão a pagar</span></div>
+        <div className="kpi"><b>{brl(p.comissao_a_pagar)}</b><span>Gratificação a pagar</span></div>
         <div className="kpi"><b>{brl(p.comissao_aguardando)}</b><span>Aguardando o cliente quitar</span></div>
       </div>
 
       <div className="card small" style={{ marginBottom: 16 }}>
         <div className="grid3">
-          <div><span className="muted">Comissão padrão</span><br />
+          <div><span className="muted">Gratificação padrão</span><br />
             {p.tipo_comissao_padrao === 'fixa' ? `Fixa · ${brl(p.valor_comissao_padrao)} por obra` : `Percentual · ${p.valor_comissao_padrao ?? '—'}%`}</div>
           <div><span className="muted">Chave PIX</span><br />{p.chave_pix || '—'}</div>
           <div><span className="muted">Próximo contato</span><br />{dataBR(p.proximo_contato)}</div>
@@ -62,7 +65,8 @@ export default function ProfissionalDetalhe() {
       <div className="tabs">
         <button className={aba === 'obras' ? 'on' : ''} onClick={() => setAba('obras')}>Obras ({obras.length})</button>
         <button className={aba === 'contatos' ? 'on' : ''} onClick={() => setAba('contatos')}>Contatos ({contatos.length})</button>
-        <button className={aba === 'comissoes' ? 'on' : ''} onClick={() => setAba('comissoes')}>Extrato de comissões ({comissoes.length})</button>
+        <button className={aba === 'comissoes' ? 'on' : ''} onClick={() => setAba('comissoes')}>Extrato de gratificações ({comissoes.length})</button>
+        <button className={aba === 'historico' ? 'on' : ''} onClick={() => setAba('historico')}>Histórico</button>
       </div>
 
       {aba === 'obras' && (
@@ -108,7 +112,7 @@ export default function ProfissionalDetalhe() {
       )}
 
       {aba === 'comissoes' && (
-        comissoes.length === 0 ? <div className="card empty">Nenhuma comissão ainda.</div> : (
+        comissoes.length === 0 ? <div className="card empty">Nenhuma gratificação ainda.</div> : (
           <div className="card tablewrap" style={{ padding: 0 }}>
             <table>
               <thead><tr><th>Obra</th><th>Tipo</th><th>Valor</th><th>Status</th><th className="hide-m">Pago em</th></tr></thead>
@@ -128,10 +132,38 @@ export default function ProfissionalDetalhe() {
         )
       )}
 
+      {aba === 'historico' && <div className="card"><Historico profissionalId={p.id} /></div>}
+
+      {modal === 'link' && <LinkIndicacao p={p} onClose={() => setModal(null)} />}
       {modal === 'contato' && <ContatoModal profissional={p} onClose={() => setModal(null)} onDone={recarregar} />}
       {modal === 'editar' && <ProfissionalModal inicial={p} onClose={() => setModal(null)} onDone={recarregar} />}
       {modal === 'obra' && <ObraModal profissionalFixo={p} inicial={{ tipo_comissao: p.tipo_comissao_padrao, valor_comissao_combinado: p.tipo_comissao_padrao === 'fixa' ? p.valor_comissao_padrao : '' }} onClose={() => setModal(null)} onDone={recarregar} />}
       {modal?.obra && <ObraModal inicial={modal.obra} onClose={() => setModal(null)} onDone={recarregar} />}
     </>
+  )
+}
+
+// Item 2: link pessoal "Indique uma obra" para mandar ao profissional
+function LinkIndicacao({ p, onClose }) {
+  const [copiado, setCopiado] = useState(false)
+  const base = window.location.href.split('#')[0]
+  const link = `${base}#/indicar/${p.token_indicacao}`
+  const primeiro = (p.apelido || p.nome).split(' ')[0]
+  const msg = `Fala ${primeiro}! Aqui é da Carvalho Pré-Moldados. Quando tiver obra chegando na laje, é só abrir este link e colocar o nome e o telefone do dono (ou mandar um áudio aqui mesmo). Indicou e fechou, tem gratificação pra você. Salva essa mensagem: ${link}`
+  const copiar = async () => {
+    try { await navigator.clipboard.writeText(link); setCopiado(true) } catch { setCopiado(false) }
+  }
+  return (
+    <Modal titulo={`Link de indicação — ${p.nome}`} onClose={onClose}>
+      <div className="stack">
+        <p className="muted small" style={{ margin: 0 }}>Este link é só do {primeiro}: tudo que chegar por ele já entra como indicação dele, com data e hora.</p>
+        <input readOnly value={link} onFocus={(e) => e.target.select()} />
+        <div className="row">
+          <button className="btn" onClick={copiar}>{copiado ? 'Copiado ✓' : 'Copiar link'}</button>
+          {linkWhats(p.telefone, msg) && <a className="btn whats" href={linkWhats(p.telefone, msg)} target="_blank" rel="noreferrer">Enviar pelo WhatsApp</a>}
+          <a className="btn ghost" href={`#/indicar/${p.token_indicacao}`} target="_blank" rel="noreferrer">Ver a página</a>
+        </div>
+      </div>
+    </Modal>
   )
 }

@@ -46,7 +46,7 @@ export default function Profissionais() {
           <div className="kpi"><b>{kpi.total}</b><span>Ativos</span></div>
           <div className="kpi"><b>{kpi.comVenda}</b><span>Já trouxeram venda</span></div>
           <div className="kpi"><b>{kpi.atrasados}</b><span>Passaram do prazo de recompra</span></div>
-          <div className="kpi"><b>{brl(kpi.aPagar)}</b><span>Comissão a pagar</span></div>
+          <div className="kpi"><b>{brl(kpi.aPagar)}</b><span>Gratificação a pagar</span></div>
         </div>
       )}
 

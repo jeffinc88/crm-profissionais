@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase, q } from '../supabase'
 import { Modal, Erro, useEnvio } from './ui'
+import Historico from './Historico'
 import { CANAIS, STATUS_OBRA, PAPEL, MOTIVOS_PERDA, somaDias, soDigitos, hoje } from '../util'
 
 const avisar = () => window.dispatchEvent(new Event('crm:atualizar'))
@@ -100,12 +101,19 @@ export function ProfissionalModal({ inicial, onClose, onDone }) {
     ...(inicial || {}),
   }))
   const { ocupado, erro, enviar } = useEnvio()
+  const [duplicados, setDuplicados] = useState(null)
   useEffect(() => { supabase.from('crm_categorias').select('*').order('ordem').then(({ data }) => setCats(data || [])) }, [])
-  const set = (k) => (e) => setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value })
+  const set = (k) => (e) => { setDuplicados(null); setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }) }
 
   const salvar = (e) => {
     e.preventDefault()
     enviar(async () => {
+      // Item 4: avisa se já existe alguém com o mesmo telefone ou o mesmo nome
+      const mudouIdentidade = !inicial?.id || soDigitos(f.telefone) !== soDigitos(inicial.telefone) || f.nome.trim() !== (inicial.nome || '').trim()
+      if (!duplicados && mudouIdentidade) {
+        const achados = await buscarProfissionaisParecidos(f.nome, soDigitos(f.telefone), inicial?.id)
+        if (achados.length) { setDuplicados(achados); return }
+      }
       const dados = {
         nome: f.nome.trim(), apelido: f.apelido || null, telefone: soDigitos(f.telefone) || null,
         cidade: f.cidade || null, categoria_id: f.categoria_id ? Number(f.categoria_id) : null,
@@ -139,7 +147,7 @@ export function ProfissionalModal({ inicial, onClose, onDone }) {
           <label>Chave PIX<input value={f.chave_pix || ''} onChange={set('chave_pix')} /></label>
         </div>
         <div className="grid3">
-          <label>Comissão padrão
+          <label>Gratificação padrão
             <select value={f.tipo_comissao_padrao} onChange={set('tipo_comissao_padrao')}>
               <option value="fixa">Fixa (R$ por obra)</option>
               <option value="percentual">Percentual (%)</option>
@@ -154,9 +162,11 @@ export function ProfissionalModal({ inicial, onClose, onDone }) {
         </div>
         <label>Observações<textarea value={f.observacoes || ''} onChange={set('observacoes')} /></label>
         {inicial?.id && <label className="check"><input type="checkbox" checked={f.ativo} onChange={set('ativo')} /> Ativo</label>}
+        {duplicados && <AvisoDuplicado itens={duplicados.map((p) => ({ id: p.id, link: `#/profissionais/${p.id}`,
+          texto: `${p.nome}${p.apelido ? ` (${p.apelido})` : ''} · ${p.motivo}` }))} />}
         <div className="foot">
           <button type="button" className="btn" onClick={onClose}>Cancelar</button>
-          <button className="btn primary" disabled={ocupado}>Salvar</button>
+          <button className="btn primary" disabled={ocupado}>{duplicados ? 'Salvar mesmo assim' : 'Salvar'}</button>
         </div>
       </form>
     </Modal>
@@ -173,12 +183,19 @@ export function ObraModal({ inicial, profissionalFixo, onClose, onDone }) {
     ...(inicial || {}),
   }))
   const { ocupado, erro, enviar } = useEnvio()
-  const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
+  const [duplicados, setDuplicados] = useState(null)
+  const [verHistorico, setVerHistorico] = useState(false)
+  const set = (k) => (e) => { setDuplicados(null); setF({ ...f, [k]: e.target.value }) }
   const nul = (v) => (v === '' || v == null ? null : v)
 
   const salvar = (e) => {
     e.preventDefault()
     enviar(async () => {
+      const mudouIdentidade = !inicial?.id || soDigitos(f.dono_telefone) !== soDigitos(inicial.dono_telefone) || soDigitos(f.dono_documento) !== soDigitos(inicial.dono_documento)
+      if (!duplicados && mudouIdentidade) {
+        const achadas = await buscarObrasParecidas(soDigitos(f.dono_telefone), soDigitos(f.dono_documento), inicial?.id)
+        if (achadas.length) { setDuplicados(achadas); return }
+      }
       const dados = {
         profissional_id: f.profissional_id || null, papel: f.papel,
         dono_nome: nul(f.dono_nome), dono_telefone: nul(soDigitos(f.dono_telefone)),
@@ -240,7 +257,7 @@ export function ObraModal({ inicial, profissionalFixo, onClose, onDone }) {
         </div>
         {f.papel === 'indicador' && (
           <div className="grid2">
-            <label>Tipo de comissão combinada
+            <label>Tipo de gratificação combinada
               <select value={f.tipo_comissao || ''} onChange={set('tipo_comissao')}>
                 <option value="">Padrão do profissional</option>
                 <option value="fixa">Fixa (R$ por obra)</option>
@@ -254,11 +271,55 @@ export function ObraModal({ inicial, profissionalFixo, onClose, onDone }) {
           </div>
         )}
         <label>Observações<textarea value={f.observacoes || ''} onChange={set('observacoes')} /></label>
+        {duplicados && <AvisoDuplicado itens={duplicados.map((o) => ({ id: o.id,
+          texto: `${o.dono_nome || 'Sem dono'} — ${o.endereco || o.cidade || 'sem endereço'} · ${o.profissional?.nome || 'sem profissional'} (${STATUS_OBRA[o.status]})` }))} />}
+        {inicial?.id && (
+          <div>
+            <button type="button" className="btn sm ghost" onClick={() => setVerHistorico(!verHistorico)}>
+              {verHistorico ? '▾' : '▸'} Histórico de alterações
+            </button>
+            {verHistorico && <div style={{ marginTop: 10 }}><Historico obraId={inicial.id} /></div>}
+          </div>
+        )}
         <div className="foot">
           <button type="button" className="btn" onClick={onClose}>Cancelar</button>
-          <button className="btn primary" disabled={ocupado}>Salvar obra</button>
+          <button className="btn primary" disabled={ocupado}>{duplicados ? 'Salvar mesmo assim' : 'Salvar obra'}</button>
         </div>
       </form>
     </Modal>
+  )
+}
+
+// ---------- Duplicados (item 4) ----------
+export async function buscarProfissionaisParecidos(nome, telefone, ignorarId) {
+  const filtros = []
+  if (telefone && telefone.length >= 10) filtros.push(`telefone.eq.${telefone}`)
+  if (nome && nome.trim().length >= 3) filtros.push(`nome.ilike.${nome.trim().replace(/[,()]/g, ' ')}`)
+  if (!filtros.length) return []
+  const lista = await q(supabase.from('crm_profissionais').select('id, nome, apelido, telefone').or(filtros.join(',')).limit(5))
+  return lista.filter((p) => p.id !== ignorarId).map((p) => ({
+    ...p, motivo: telefone && p.telefone === telefone ? 'mesmo telefone' : 'mesmo nome',
+  }))
+}
+
+export async function buscarObrasParecidas(telefone, documento, ignorarId) {
+  const filtros = []
+  if (telefone && telefone.length >= 10) filtros.push(`dono_telefone.eq.${telefone}`)
+  if (documento && documento.length >= 11) filtros.push(`dono_documento.eq.${documento}`)
+  if (!filtros.length) return []
+  const lista = await q(supabase.from('crm_obras').select('id, dono_nome, endereco, cidade, status, profissional:crm_profissionais(nome)')
+    .or(filtros.join(',')).neq('status', 'perdida').limit(5))
+  return lista.filter((o) => o.id !== ignorarId)
+}
+
+export function AvisoDuplicado({ itens }) {
+  return (
+    <div className="alert warn">
+      <b>Pode ser duplicado.</b> Já existe no CRM:
+      <ul style={{ margin: '6px 0', paddingLeft: 18 }}>
+        {itens.map((i) => <li key={i.id}>{i.link ? <a href={i.link}>{i.texto}</a> : i.texto}</li>)}
+      </ul>
+      Confira antes de salvar. Se for outra pessoa/obra, clique em “Salvar mesmo assim”.
+    </div>
   )
 }

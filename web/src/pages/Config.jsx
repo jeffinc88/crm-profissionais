@@ -46,10 +46,10 @@ export default function Config() {
         <div className="grid3">
           <label>Alerta de recompra (dias sem venda)<input type="number" min="1" value={f.prazo_recompra_dias} onChange={set('prazo_recompra_dias')} /></label>
           <label>Pós-entrega (dias após a entrega)<input type="number" min="0" value={f.dias_pos_entrega} onChange={set('dias_pos_entrega')} /></label>
-          <label>Percentual padrão de comissão (%)<input type="number" step="0.01" min="0" value={f.percentual_padrao} onChange={set('percentual_padrao')} /></label>
+          <label>Percentual padrão de gratificação (%)<input type="number" step="0.01" min="0" value={f.percentual_padrao} onChange={set('percentual_padrao')} /></label>
         </div>
         <label className="check"><input type="checkbox" checked={f.comissao_profissional_obra} onChange={set('comissao_profissional_obra')} />
-          Pagar comissão também ao Profissional da Obra (quando ele não indicou)</label>
+          Pagar gratificação também ao Profissional da Obra (quando ele não indicou)</label>
         <div className="row"><button className="btn primary" disabled={ocupado}>Salvar regras</button>{ok && <span className="badge ok">Salvo</span>}</div>
       </form>
 

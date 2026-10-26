@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { HashRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { supabase, configurado, q } from './supabase'
+import { supabase, configurado, erroConfig, q } from './supabase'
 import { Erro } from './components/ui'
 import Agenda from './pages/Agenda'
 import Profissionais from './pages/Profissionais'
@@ -9,6 +9,8 @@ import Obras from './pages/Obras'
 import Conciliacao from './pages/Conciliacao'
 import Comissoes from './pages/Comissoes'
 import Config from './pages/Config'
+import Painel from './pages/Painel'
+import Indicar from './pages/Indicar'
 
 const Ctx = createContext(null)
 export const useSessao = () => useContext(Ctx)
@@ -31,6 +33,11 @@ export default function App() {
   }, [sessao])
 
   if (!configurado) return <SemConfig />
+
+  // Página pública "Indique uma obra": não exige login
+  const indicacao = window.location.hash.match(/^#\/indicar\/([0-9a-f-]{36})/i)
+  if (indicacao) return <Indicar token={indicacao[1]} />
+
   if (sessao === undefined) return <div className="empty">Carregando…</div>
   if (!sessao) return <Login />
   if (operador === undefined) return <div className="empty">Carregando…</div>
@@ -47,14 +54,15 @@ export default function App() {
 
 function Shell() {
   const { operador, gerencial } = useSessao()
-  const [contagem, setContagem] = useState({ agenda: 0, fila: 0 })
+  const [contagem, setContagem] = useState({ agenda: 0, fila: 0, indicacoes: 0 })
 
   const atualizar = useCallback(async () => {
-    const [a, f] = await Promise.all([
+    const [a, f, i] = await Promise.all([
       supabase.from('crm_v_agenda').select('tipo', { count: 'exact', head: true }),
       supabase.from('crm_v_fila_conciliacao').select('id', { count: 'exact', head: true }),
+      supabase.from('crm_indicacoes').select('id', { count: 'exact', head: true }).eq('status', 'pendente'),
     ])
-    setContagem({ agenda: a.count || 0, fila: f.count || 0 })
+    setContagem({ agenda: a.count || 0, fila: f.count || 0, indicacoes: i.count || 0 })
   }, [])
 
   useEffect(() => {
@@ -66,10 +74,11 @@ function Shell() {
 
   const links = [
     { to: '/agenda', label: 'Agenda', ico: '📅', n: contagem.agenda },
+    { to: '/painel', label: 'Painel', ico: '📊' },
     { to: '/profissionais', label: 'Profissionais', ico: '👷' },
-    { to: '/obras', label: 'Obras', ico: '🏗️' },
+    { to: '/obras', label: 'Obras', ico: '🏗️', n: contagem.indicacoes },
     { to: '/conciliacao', label: 'Conciliação', ico: '🔗', n: contagem.fila },
-    { to: '/comissoes', label: 'Comissões', ico: '💰' },
+    { to: '/gratificacoes', label: 'Gratificações', ico: '💰' },
   ]
 
   return (
@@ -95,11 +104,12 @@ function Shell() {
         <Routes>
           <Route path="/" element={<Navigate to="/agenda" replace />} />
           <Route path="/agenda" element={<Agenda />} />
+          <Route path="/painel" element={<Painel />} />
           <Route path="/profissionais" element={<Profissionais />} />
           <Route path="/profissionais/:id" element={<ProfissionalDetalhe />} />
           <Route path="/obras" element={<Obras />} />
           <Route path="/conciliacao" element={<Conciliacao />} />
-          <Route path="/comissoes" element={<Comissoes />} />
+          <Route path="/gratificacoes" element={<Comissoes />} />
           <Route path="/config" element={gerencial ? <Config /> : <Navigate to="/agenda" />} />
           <Route path="*" element={<Navigate to="/agenda" replace />} />
         </Routes>
@@ -157,8 +167,9 @@ function SemAcesso({ email }) {
 function SemConfig() {
   return (
     <div className="login"><div className="card stack">
-      <h1>Falta configurar o Supabase</h1>
-      <p className="muted">Defina <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_ANON_KEY</code> (arquivo <code>.env</code> ou segredos do GitHub) e gere o site de novo.</p>
+      <h1>Configuração do Supabase com problema</h1>
+      <div className="alert bad">{erroConfig}</div>
+      <p className="muted small">Corrija em GitHub › Settings › Secrets and variables › Actions e rode de novo o workflow “Publicar CRM no GitHub Pages”.</p>
     </div></div>
   )
 }

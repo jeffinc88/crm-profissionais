@@ -154,7 +154,7 @@ function ConciliarModal({ pedido, obrasLivres, onClose, onDone }) {
         {geraComissao ? (
           <>
             <div className="grid3">
-              <label>Tipo de comissão
+              <label>Tipo de gratificação
                 <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
                   <option value="">Automático ({tipoFinal === 'fixa' ? 'Fixa' : 'Percentual'})</option>
                   <option value="fixa">Fixa</option>
@@ -170,17 +170,17 @@ function ConciliarModal({ pedido, obrasLivres, onClose, onDone }) {
                   <input type="number" step="0.01" min="0" value={perc} onChange={(e) => setPerc(e.target.value)} placeholder={prof?.valor_comissao_padrao ?? ''} />
                 </label>
               )}
-              <div><span className="muted small">Comissão prevista</span><div style={{ fontSize: '1.3rem', fontWeight: 700 }} className="num">{brl(valorPrevisto)}</div></div>
+              <div><span className="muted small">Gratificação prevista</span><div style={{ fontSize: '1.3rem', fontWeight: 700 }} className="num">{brl(valorPrevisto)}</div></div>
             </div>
             {tipoFinal === 'percentual' && <div className="muted small">Calculada sobre os produtos ({brl(pedido.valor_produtos)}), sem o frete.</div>}
-            {diverge && <div className="alert warn">O valor combinado na obra era {brl(combinado)}, mas o pedido traz {brl(valorPrevisto)}. A comissão será marcada como <b>divergente</b> para o Gerencial revisar.</div>}
-            {!pedido.originado_crm && <div className="alert bad"><b>Profissional omitido:</b> o orçamento não foi marcado como vindo de profissional. O profissional recebe a comissão e o representante <b>perde a comissão desta venda</b>.</div>}
+            {diverge && <div className="alert warn">O valor combinado na obra era {brl(combinado)}, mas o pedido traz {brl(valorPrevisto)}. A gratificação será marcada como <b>divergente</b> para o Gerencial revisar.</div>}
+            {!pedido.originado_crm && <div className="alert bad"><b>Profissional omitido:</b> o orçamento não foi marcado como vindo de profissional. O profissional recebe a gratificação e o representante <b>não recebe por esta venda</b>.</div>}
           </>
         ) : prof ? (
           <div className="alert info">
             {papelFinal === 'comprador'
-              ? 'Comprador — a venda conta como originada pelo profissional, mas não gera comissão.'
-              : 'Profissional da Obra — ele fica ligado à obra, mas a venda não conta como originada por ele e não gera comissão (a não ser que a regra esteja ligada nas Configurações).'}
+              ? 'Comprador — a venda conta como originada pelo profissional, mas não gera gratificação.'
+              : 'Profissional da Obra — ele fica ligado à obra, mas a venda não conta como originada por ele e não gera gratificação (a não ser que a regra esteja ligada nas Configurações).'}
           </div>
         ) : null}
 

@@ -25,7 +25,7 @@ O papel do Profissional quando a fábrica o recomenda a um cliente que procura m
 _Avoid_: Profissional indicado, banco de pedreiros
 
 **Dono da Obra**:
-A pessoa que paga pela obra e compra a laje. Nunca toma conhecimento da Comissão do Profissional.
+A pessoa que paga pela obra e compra a laje. Nunca toma conhecimento da Gratificação do Profissional.
 _Avoid_: Cliente final, proprietário
 
 **Operador**:
@@ -33,10 +33,10 @@ Pessoa da fábrica que usa o CRM, com perfil Gerencial ou Operacional.
 _Avoid_: Usuário, vendedor
 
 **Gerencial**:
-Perfil de Operador que vê tudo e é o único a registrar pagamentos de Comissão e alterar as regras do CRM.
+Perfil de Operador que vê tudo e é o único a registrar pagamentos de Gratificação e alterar as regras do CRM.
 
 **Operacional**:
-Perfil de Operador que cadastra Profissionais e Obras, trabalha a Agenda e a Conciliação, e vê o Extrato de Comissões só para leitura.
+Perfil de Operador que cadastra Profissionais e Obras, trabalha a Agenda e a Conciliação, e vê o Extrato de Gratificações só para leitura.
 
 ## Obras e vendas
 
@@ -45,7 +45,7 @@ Uma construção concreta, com endereço e Dono da Obra, ligada a um ou mais Pro
 _Avoid_: Projeto, serviço
 
 **Profissional da Obra**:
-O Profissional ligado a uma Obra que ele não indicou (o Dono da Obra chegou por conta própria). Por padrão, não recebe Comissão.
+O Profissional ligado a uma Obra que ele não indicou (o Dono da Obra chegou por conta própria). Por padrão, não recebe Gratificação.
 _Avoid_: Pedreiro responsável
 
 **Status da Obra**:
@@ -63,35 +63,35 @@ Quem trouxe a venda. É definida pelo primeiro orçamento registrado no app para
 _Avoid_: Dono da venda, autoria
 
 **Venda Originada por Profissional**:
-Venda de laje cuja Origem é um Profissional, como Indicador ou Comprador. É a métrica principal de sucesso do CRM. Quando o Profissional é o Comprador, a venda conta, mas não gera Comissão.
+Venda de laje cuja Origem é um Profissional, como Indicador ou Comprador. É a métrica principal de sucesso do CRM. Quando o Profissional é o Comprador, a venda conta, mas não gera Gratificação.
 _Avoid_: Venda do pedreiro, venda indicada
 
 **Conciliação**:
-O cruzamento de uma Obra do CRM com o orçamento ou pedido correspondente do app comercial, feito a partir da Fila de Conciliação. Inclui a checagem de que a Comissão Fixa combinada pelo vendedor bate com o valor registrado.
+O cruzamento de uma Obra do CRM com o orçamento ou pedido correspondente do app comercial, feito a partir da Fila de Conciliação. Inclui a checagem de que a Gratificação Fixa combinada pelo vendedor bate com o valor registrado.
 _Avoid_: Sincronização, vínculo
 
 **Fila de Conciliação**:
 A lista de pedidos fechados no app que ainda precisam ser ligados a uma Obra: os marcados como Originados do CRM e os sem nenhum Profissional ligado.
 
-## Comissão
+## Gratificação
 
-**Comissão do Profissional**:
+**Gratificação do Profissional**:
 O valor que a fábrica paga ao Indicador por uma venda, liberado só depois que o Dono da Obra quita tudo. Pode ser Fixa ou Percentual.
-_Avoid_: Bonificação, RT, gratificação
+_Avoid_: Comissão, bonificação, RT
 
-**Comissão Fixa**:
-Comissão de valor fechado por Obra, combinado pelo vendedor diretamente com o Profissional antes do orçamento, lançado em "Outras Despesas" e diluído no preço que o Dono da Obra vê.
-_Avoid_: Comissão embutida
+**Gratificação Fixa**:
+Gratificação de valor fechado por Obra, combinado pelo vendedor diretamente com o Profissional antes do orçamento, lançado em "Outras Despesas" e diluído no preço que o Dono da Obra vê.
+_Avoid_: Gratificação embutida
 
-**Comissão Percentual**:
-Comissão calculada como % do valor dos produtos (sem frete) e paga a partir da margem da fábrica, sem alterar o preço do orçamento.
+**Gratificação Percentual**:
+Gratificação calculada como % do valor dos produtos (sem frete) e paga a partir da margem da fábrica, sem alterar o preço do orçamento.
 
-**Tipo de Comissão Padrão**:
+**Tipo de Gratificação Padrão**:
 O tipo (Fixa ou Percentual) e o valor sugeridos no cadastro do Profissional, que o Operador pode trocar em cada orçamento.
 _Avoid_: Porcentagem do pedreiro
 
-**Extrato de Comissões**:
-O histórico, por Profissional, das comissões a pagar e já pagas.
+**Extrato de Gratificações**:
+O histórico, por Profissional, das gratificações a pagar e já pagas.
 _Avoid_: Conta corrente, saldo
 
 ## Relacionamento
@@ -109,3 +109,5 @@ Aviso na Agenda poucos dias depois da entrega da laje de uma Obra. Serve também
 
 **Alerta de Obra sem Laje**:
 Aviso na Agenda para acompanhar uma Obra cadastrada que ainda não chegou à etapa da laje.
+
+> Termo escolhido: o CRM usa sempre **gratificação** (nunca "comissão") para o que a fábrica paga ao profissional. "Comissão" fica reservado para a relação com os representantes, que é outra coisa.
