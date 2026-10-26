@@ -8,8 +8,8 @@ O vocabulário está em [`GLOSSARY.md`](GLOSSARY.md). As decisões e o motivo de
 
 | Tela | Para quê |
 |---|---|
-| **Agenda** | Com quem falar hoje. Mostra:<br>• recompra: profissional há 60+ dias sem venda (o prazo é ajustável);<br>• contatos agendados;<br>• pós-entrega: confirmar com o Dono da Obra quem é o pedreiro;<br>• obras que ainda não chegaram na laje.<br>Cada item tem um botão de WhatsApp e o registro do contato. |
-| **Profissionais** | Cadastro com Categoria, gratificação padrão (Fixa ou Percentual), chave PIX e prazo de recompra próprio. Na ficha de cada um: obras, histórico de contatos e extrato de gratificações. |
+| **Agenda** | Com quem falar hoje. Mostra:<br>• recompra: profissional há 60+ dias sem venda (o prazo é ajustável);<br>• contatos agendados;<br>• pós-entrega: confirmar com o Dono da Obra quem é o pedreiro;<br>• obras que ainda não chegaram na laje;<br>• aniversários dos próximos 7 dias (tempo de separar o presente).<br>Cada item tem um botão de WhatsApp e o registro do contato. |
+| **Profissionais** | Cadastro com Categoria, gratificação padrão (Fixa ou Percentual), chave PIX, data de nascimento e prazo de recompra próprio. Na ficha de cada um: obras, histórico de contatos e extrato de gratificações. |
 | **Obras** | Funil por status: em andamento, orçada, fechada, perdida (com o motivo) ou entregue. Registra o papel do profissional em cada obra (Indicador, Comprador ou Profissional da Obra). |
 | **Conciliação** | Fila dos pedidos fechados no app. Liga cada pedido a uma obra, calcula a gratificação e sinaliza valor **divergente** e **profissional omitido**. |
 | **Gratificações** | Extrato geral. A gratificação passa de "aguardando" para "a pagar" quando o cliente quita, e de "a pagar" para "paga" com o comprovante do PIX. Só o Gerencial paga, ajusta ou cancela. |
@@ -20,7 +20,7 @@ Ficam para a **v2**: o papel *Recomendado* (a fábrica indicar mão de obra) e a
 ## Como instalar
 
 ### 1. Banco (Supabase, mesmo projeto do app)
-1. No Supabase, abra o **SQL Editor** e rode `supabase/migrations/0001_crm_schema.sql`. O script pode ser rodado de novo sem estragar nada.
+1. No Supabase, abra o **SQL Editor** e rode, em ordem, os arquivos de `supabase/migrations/` (`0001_crm_schema.sql`, `0002_painel_indicacoes_historico.sql`, `0003_aniversario.sql`). Os scripts podem ser rodados de novo sem estragar nada.
 2. Em **Authentication › Users › Add user**, crie os dois usuários (e-mail e senha, marcando *Auto Confirm User*).
 3. Rode `supabase/adicionar_operador.sql` uma vez para cada usuário, ajustando o e-mail, o nome e o perfil (`gerencial` ou `operacional`).
 4. Em **Authentication › Providers › Email**, se quiser, desligue "Allow new users to sign up". Assim, ninguém de fora cria conta. Mesmo que alguém crie, não vê nada sem estar em `crm_operadores`.

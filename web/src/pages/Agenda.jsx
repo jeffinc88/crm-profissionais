@@ -5,7 +5,10 @@ import { useCarregar, Carregando, BotaoWhats } from '../components/ui'
 import { ContatoModal } from '../components/forms'
 import { TIPO_AGENDA, MOTIVO_POR_TIPO, dataBR, formataTelefone } from '../util'
 
-const ORDEM_FILTRO = ['todos', 'pos_entrega', 'recompra', 'agendado', 'obra_sem_laje']
+// data de hoje no fuso de quem está usando (Brasília)
+const hojeLocal = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+
+const ORDEM_FILTRO = ['todos', 'aniversario', 'pos_entrega', 'recompra', 'agendado', 'obra_sem_laje']
 
 export default function Agenda() {
   const [filtro, setFiltro] = useState('todos')
@@ -24,6 +27,7 @@ export default function Agenda() {
   const textoWhats = (i) =>
     i.tipo === 'recompra' ? `Olá ${i.profissional_nome.split(' ')[0]}, tudo bem? Aqui é da Carvalho Pré-Moldados. Tem alguma obra chegando na laje?`
       : i.tipo === 'pos_entrega' ? 'Olá, tudo bem? Aqui é da Carvalho Pré-Moldados. A laje chegou certinho? Ficou tudo bem na obra?'
+        : i.tipo === 'aniversario' && i.data_ref === hojeLocal() ? `Fala ${i.profissional_nome.split(' ')[0]}! Feliz aniversário! Muita saúde e muita obra pra você. Um abraço de todo mundo aqui da Carvalho Pré-Moldados!`
         : ''
 
   return (
@@ -31,7 +35,7 @@ export default function Agenda() {
       <div className="head">
         <div>
           <h1>Agenda de hoje</h1>
-          <p className="sub">Com quem falar hoje: profissionais sem venda, pós-entregas e obras para acompanhar.</p>
+          <p className="sub">Com quem falar hoje: aniversários da semana, profissionais sem venda, pós-entregas e obras para acompanhar.</p>
         </div>
       </div>
 
@@ -58,7 +62,8 @@ export default function Agenda() {
                 </div>
                 <div>{i.descricao}</div>
                 <div className="muted small">
-                  {formataTelefone(i.telefone)} · desde {dataBR(i.data_ref)}
+                  {formataTelefone(i.telefone)} · {i.tipo === 'aniversario' ? `dia ${dataBR(i.data_ref)}` : `desde ${dataBR(i.data_ref)}`}
+                  {i.tipo === 'aniversario' && i.data_ref !== hojeLocal() && ' · separe o presente'}
                   {i.tipo === 'pos_entrega' && ' · confirme com o Dono da Obra quem é o pedreiro'}
                 </div>
               </div>

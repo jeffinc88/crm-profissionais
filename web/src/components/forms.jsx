@@ -97,7 +97,7 @@ export function ProfissionalModal({ inicial, onClose, onDone }) {
   const [cats, setCats] = useState([])
   const [f, setF] = useState(() => ({
     nome: '', apelido: '', telefone: '', cidade: '', categoria_id: '', tipo_comissao_padrao: 'fixa',
-    valor_comissao_padrao: '', prazo_recompra_dias: '', chave_pix: '', observacoes: '', ativo: true,
+    valor_comissao_padrao: '', prazo_recompra_dias: '', chave_pix: '', data_nascimento: '', observacoes: '', ativo: true,
     ...(inicial || {}),
   }))
   const { ocupado, erro, enviar } = useEnvio()
@@ -120,7 +120,8 @@ export function ProfissionalModal({ inicial, onClose, onDone }) {
         tipo_comissao_padrao: f.tipo_comissao_padrao,
         valor_comissao_padrao: f.valor_comissao_padrao === '' || f.valor_comissao_padrao == null ? null : Number(f.valor_comissao_padrao),
         prazo_recompra_dias: f.prazo_recompra_dias ? Number(f.prazo_recompra_dias) : null,
-        chave_pix: f.chave_pix || null, observacoes: f.observacoes || null, ativo: f.ativo,
+        chave_pix: f.chave_pix || null, data_nascimento: f.data_nascimento || null,
+        observacoes: f.observacoes || null, ativo: f.ativo,
       }
       const r = inicial?.id
         ? await q(supabase.from('crm_profissionais').update(dados).eq('id', inicial.id).select().single())
@@ -145,6 +146,7 @@ export function ProfissionalModal({ inicial, onClose, onDone }) {
             </select>
           </label>
           <label>Chave PIX<input value={f.chave_pix || ''} onChange={set('chave_pix')} /></label>
+          <label>Data de nascimento<input type="date" value={f.data_nascimento || ''} onChange={set('data_nascimento')} max={new Date().toISOString().slice(0, 10)} /></label>
         </div>
         <div className="grid3">
           <label>Gratificação padrão

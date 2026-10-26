@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { supabase, q } from '../supabase'
 import { useCarregar, Carregando, BotaoWhats, Modal } from '../components/ui'
 import { ContatoModal, ProfissionalModal, ObraModal } from '../components/forms'
-import { brl, dataBR, formataTelefone, PAPEL, CANAIS } from '../util'
+import { brl, dataBR, diaMes, formataTelefone, PAPEL, CANAIS } from '../util'
 import { CorStatusObra, CorStatusComissao } from './Obras'
 import Historico from '../components/Historico'
 import { linkWhats } from '../util'
@@ -34,6 +34,7 @@ export default function ProfissionalDetalhe() {
           <div className="row small muted" style={{ gap: 8 }}>
             <span className="badge info">{p.categoria || 'Sem categoria'}</span>
             <span>{p.cidade || '—'}</span>·<span className="num">{formataTelefone(p.telefone)}</span>
+            {p.data_nascimento && <>·<span>🎂 {diaMes(p.data_nascimento)}</span></>}
             {!p.ativo && <span className="badge">Inativo</span>}
           </div>
         </div>

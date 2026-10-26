@@ -16,6 +16,8 @@ export const somaDias = (n, base = new Date()) => {
   return d.toISOString().slice(0, 10)
 }
 
+export const diaMes = (d) => (d ? `${d.slice(8, 10)}/${d.slice(5, 7)}` : '—')
+
 export const soDigitos = (s) => (s || '').replace(/\D/g, '')
 
 export const formataTelefone = (t) => {
@@ -59,6 +61,7 @@ export const TIPO_AGENDA = {
   agendado: { label: 'Agendado', cor: 'info' },
   pos_entrega: { label: 'Pós-entrega', cor: 'ok' },
   obra_sem_laje: { label: 'Obra sem laje', cor: 'muted' },
+  aniversario: { label: 'Aniversário', cor: 'bad' },
 }
 
 export const MOTIVO_POR_TIPO = {
@@ -66,6 +69,7 @@ export const MOTIVO_POR_TIPO = {
   agendado: 'agendado',
   pos_entrega: 'pos_entrega',
   obra_sem_laje: 'acompanhamento',
+  aniversario: 'avulso',
 }
 
 export const CANAIS = { whatsapp: 'WhatsApp', ligacao: 'Ligação', visita: 'Visita', outro: 'Outro' }
