@@ -18,6 +18,12 @@ export const useSessao = () => useContext(Ctx)
 export default function App() {
   const [sessao, setSessao] = useState(undefined)
   const [operador, setOperador] = useState(undefined)
+  const [, setHash] = useState(window.location.hash)
+  useEffect(() => {
+    const h = () => setHash(window.location.hash)
+    window.addEventListener('hashchange', h)
+    return () => window.removeEventListener('hashchange', h)
+  }, [])
 
   useEffect(() => {
     if (!configurado) return
@@ -113,6 +119,7 @@ function Shell() {
           <Route path="/conciliacao" element={<Conciliacao />} />
           <Route path="/gratificacoes" element={<Comissoes />} />
           <Route path="/config" element={gerencial ? <Config /> : <Navigate to="/agenda" />} />
+          <Route path="/indicar/*" element={null} />
           <Route path="*" element={<Navigate to="/agenda" replace />} />
         </Routes>
       </main>

@@ -10,12 +10,27 @@ import { linkWhats, WHATS_FABRICA } from '../util'
 const ETAPAS = ['Começando', 'Levantando paredes', 'Pronta pra laje']
 const VAZIO = { eu: '', meuTel: '', dono: '', telefone: '', onde: '', etapa: '' }
 
+// No link geral, o celular lembra quem é o profissional depois da primeira indicação
+const CHAVE = 'crm:indicador'
+const lerEu = () => { try { const v = JSON.parse(localStorage.getItem(CHAVE)); return v?.eu && v?.meuTel ? v : null } catch { return null } }
+const gravarEu = (v) => { try { v ? localStorage.setItem(CHAVE, JSON.stringify(v)) : localStorage.removeItem(CHAVE) } catch { /* sem armazenamento */ } }
+
 export default function Indicar({ token }) {
   const geral = !token
   const [nome, setNome] = useState(geral ? '' : undefined)
-  const [f, setF] = useState(VAZIO)
+  const [lembrado, setLembrado] = useState(() => (geral ? lerEu() : null))
+  const [f, setF] = useState(() => ({ ...VAZIO, ...(geral ? lerEu() || {} : {}) }))
   const [estado, setEstado] = useState('form') // form | enviando | ok
   const [erro, setErro] = useState('')
+
+  // Atalho na tela inicial abre direto nesta página
+  useEffect(() => {
+    const link = document.querySelector('link[rel="manifest"]')
+    const antes = link?.getAttribute('href')
+    if (geral) link?.setAttribute('href', './indicar.webmanifest')
+    document.title = 'Indicar obra · Carvalho Pré-Moldados'
+    return () => { if (link && antes) link.setAttribute('href', antes) }
+  }, [geral])
 
   useEffect(() => {
     if (geral) return
@@ -39,6 +54,7 @@ export default function Indicar({ token }) {
           p_cidade: '', p_etapa: f.etapa, p_previsao_laje: '', p_observacao: '',
         })
     if (error) { setErro(error.message); setEstado('form'); return }
+    if (geral) { const eu = { eu: f.eu.trim(), meuTel: f.meuTel }; gravarEu(eu); setLembrado(eu) }
     setEstado('ok')
   }
 
@@ -71,6 +87,7 @@ export default function Indicar({ token }) {
               : 'A fábrica vai ligar pro dono da obra. Fechou, sua gratificação tá garantida.'}
           </p>
           <button className="btn grande" onClick={() => { setF(geral ? { ...VAZIO, eu: f.eu, meuTel: f.meuTel } : VAZIO); setEstado('form') }}>Indicar outra obra</button>
+          {geral && <AtalhoTelaInicial />}
         </div>
       )}
 
@@ -79,10 +96,10 @@ export default function Indicar({ token }) {
           {!geral && <div className="incentivo">💰 Indicou e fechou, <b>você ganha sua gratificação</b>. Quanto antes indicar, melhor.</div>}
 
           <form className="card stack" onSubmit={enviar}>
-            <h1 style={{ margin: 0 }}>{geral ? 'Indique uma obra' : `Oi, ${nome}! Qual a obra?`}</h1>
-            {geral && <p className="muted small" style={{ margin: 0 }}>É pedreiro, mestre de obras ou trabalha com construção? Conta pra gente de uma obra que vai precisar de laje.</p>}
+            <h1 style={{ margin: 0 }}>{geral ? (lembrado ? `Oi, ${lembrado.eu.split(' ')[0]}! Qual a obra?` : 'Indique uma obra') : `Oi, ${nome}! Qual a obra?`}</h1>
+            {geral && !lembrado && <p className="muted small" style={{ margin: 0 }}>É pedreiro, mestre de obras ou trabalha com construção? Conta pra gente de uma obra que vai precisar de laje.</p>}
             {erro && <div className="alert bad">{erro}</div>}
-            {geral && (
+            {geral && !lembrado && (
               <div className="grid2">
                 <label>Seu nome<input value={f.eu} onChange={set('eu')} required autoComplete="name" /></label>
                 <label>Seu telefone<input value={f.meuTel} onChange={set('meuTel')} required inputMode="tel" autoComplete="tel" placeholder="(16) 99999-9999" /></label>
@@ -107,8 +124,42 @@ export default function Indicar({ token }) {
           <div className="ou"><span>ou</span></div>
           <a className="btn whats grande" href={audio}>🎤 Prefiro mandar áudio</a>
           <p className="muted small" style={{ textAlign: 'center' }}>Abre o WhatsApp da fábrica. Pode mandar áudio ou encaminhar o contato do dono.</p>
+          {lembrado && (
+            <p className="small" style={{ textAlign: 'center' }}>
+              Não é {lembrado.eu.split(' ')[0]}?{' '}
+              <button type="button" className="linkbtn" onClick={() => { gravarEu(null); setLembrado(null); setF(VAZIO) }}>Trocar</button>
+            </p>
+          )}
         </>
       )}
     </div>
+  )
+}
+
+// Botão "colocar na tela inicial" (Android) ou instrução (iPhone)
+function AtalhoTelaInicial() {
+  const [evento, setEvento] = useState(window.__crmInstalar || null)
+  const [feito, setFeito] = useState(false)
+  useEffect(() => {
+    const h = (e) => { e.preventDefault(); window.__crmInstalar = e; setEvento(e) }
+    window.addEventListener('beforeinstallprompt', h)
+    return () => window.removeEventListener('beforeinstallprompt', h)
+  }, [])
+  const instalado = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone
+  if (instalado || feito) return null
+  const iphone = /iphone|ipad|ipod/i.test(navigator.userAgent)
+  if (evento) {
+    return (
+      <button className="btn grande" onClick={async () => { evento.prompt(); await evento.userChoice; setFeito(true) }}>
+        📲 Colocar atalho na tela inicial
+      </button>
+    )
+  }
+  return (
+    <p className="muted small" style={{ margin: 0 }}>
+      📲 Dica: {iphone
+        ? <>toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b></>
+        : <>no menu do navegador (⋮), toque em <b>Adicionar à tela inicial</b></>} para ter o atalho “Indicar obra” no celular.
+    </p>
   )
 }

@@ -1,0 +1,13 @@
+{
+  "name": "Indicar obra · Carvalho Pré-Moldados",
+  "short_name": "Indicar obra",
+  "start_url": "./#/indicar",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f2ee",
+  "theme_color": "#d96b22",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

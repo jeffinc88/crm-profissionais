@@ -240,3 +240,5 @@ details.tabela summary { cursor: pointer; font-size: .8rem; color: var(--ink-2);
 .etapas button.on { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
 .ou { display: flex; align-items: center; gap: 10px; color: var(--ink-2); font-size: .85rem; margin: 16px 0; }
 .ou::before, .ou::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+.linkbtn { background: none; border: 0; padding: 0; font: inherit; color: var(--ink); text-decoration: underline; cursor: pointer; }
