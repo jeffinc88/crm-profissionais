@@ -20,7 +20,7 @@ Ficam para a **v2**: o papel *Recomendado* (a fábrica indicar mão de obra) e a
 ## Como instalar
 
 ### 1. Banco (Supabase, mesmo projeto do app)
-1. No Supabase, abra o **SQL Editor** e rode, em ordem, os arquivos de `supabase/migrations/` (`0001_crm_schema.sql`, `0002_painel_indicacoes_historico.sql`, `0003_aniversario.sql`). Os scripts podem ser rodados de novo sem estragar nada.
+1. No Supabase, abra o **SQL Editor** e rode, em ordem, os arquivos de `supabase/migrations/` (`0001_crm_schema.sql`, `0002_painel_indicacoes_historico.sql`, `0003_aniversario.sql`, `0004_indicacao_geral.sql`). Os scripts podem ser rodados de novo sem estragar nada.
 2. Em **Authentication › Users › Add user**, crie os dois usuários (e-mail e senha, marcando *Auto Confirm User*).
 3. Rode `supabase/adicionar_operador.sql` uma vez para cada usuário, ajustando o e-mail, o nome e o perfil (`gerencial` ou `operacional`).
 4. Em **Authentication › Providers › Email**, se quiser, desligue "Allow new users to sign up". Assim, ninguém de fora cria conta. Mesmo que alguém crie, não vê nada sem estar em `crm_operadores`.

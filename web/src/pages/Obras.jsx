@@ -215,7 +215,10 @@ function Indicacoes({ itens, onMudou }) {
             <div className="stack" style={{ gap: 3 }}>
               <div className="row" style={{ gap: 8 }}>
                 <span className="badge info">Indicação</span><b>{i.dono_nome}</b>
-                <span className="muted small">por <Link to={`/profissionais/${i.profissional.id}`}>{i.profissional.nome}</Link> em {new Date(i.recebida_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                <span className="muted small">por {i.profissional
+                  ? <Link to={`/profissionais/${i.profissional.id}`}>{i.profissional.nome}</Link>
+                  : <><b>{i.indicador_nome}</b> ({formataTelefone(i.indicador_telefone)}) <span className="badge warn">sem cadastro</span></>} em {new Date(i.recebida_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                {i.origem === 'link_geral' && <span className="badge">link geral</span>}
               </div>
               <div className="small">{[i.endereco, i.cidade].filter(Boolean).join(' — ') || 'Sem endereço'} · {formataTelefone(i.dono_telefone)}</div>
               <div className="muted small">{[i.etapa && `Etapa: ${i.etapa}`, i.previsao_laje && `Laje: ${i.previsao_laje}`].filter(Boolean).join(' · ')}</div>
@@ -238,9 +241,14 @@ function RevisarIndicacao({ ind, onClose, onDone }) {
   const { ocupado, erro, enviar } = useEnvio()
   const { data: parecidas } = useCarregar(() => buscarObrasParecidas(ind.dono_telefone, null, null), [ind.id])
   const [ligarA, setLigarA] = useState('')
+  const lista = useProfissionaisLista()
+  const [profId, setProfId] = useState(ind.profissional?.id || null)
+  const prof = ind.profissional || (lista || []).find((p) => p.id === profId)
+  const quemNome = prof?.nome || ind.indicador_nome
 
   const aprovar = () => enviar(async () => {
-    await q(supabase.rpc('crm_aprovar_indicacao', { p_indicacao_id: ind.id, p_obra_existente: ligarA || null }))
+    if (!profId) throw new Error('Escolha quem indicou. Se a pessoa ainda não tem cadastro, cadastre em Profissionais e volte aqui.')
+    await q(supabase.rpc('crm_aprovar_indicacao', { p_indicacao_id: ind.id, p_obra_existente: ligarA || null, p_profissional_id: profId }))
     onDone(); onClose()
   })
   const recusar = () => enviar(async () => {
@@ -249,9 +257,16 @@ function RevisarIndicacao({ ind, onClose, onDone }) {
   })
 
   return (
-    <Modal titulo={`Indicação de ${ind.profissional.nome}`} onClose={onClose}>
+    <Modal titulo={`Indicação de ${quemNome}`} onClose={onClose}>
       <div className="stack">
         <Erro msg={erro} />
+        {!ind.profissional && (
+          <div className="alert warn">
+            Veio pelo <b>link geral</b>, de <b>{ind.indicador_nome}</b> · {formataTelefone(ind.indicador_telefone)}. O telefone não bate com nenhum profissional cadastrado.
+            <label style={{ marginTop: 8 }}>Quem indicou<SelectProfissional value={profId} onChange={setProfId} lista={lista} /></label>
+            <span className="small">Não está na lista? Cadastre em <Link to="/profissionais">Profissionais</Link> com esse telefone e volte aqui.</span>
+          </div>
+        )}
         <div className="small"><b>{ind.dono_nome}</b> · {formataTelefone(ind.dono_telefone)}<br />{[ind.endereco, ind.cidade].filter(Boolean).join(' — ')}</div>
         {parecidas?.length > 0 && (
           <div className="alert warn">
@@ -264,7 +279,7 @@ function RevisarIndicacao({ ind, onClose, onDone }) {
             </label>
           </div>
         )}
-        <p className="muted small" style={{ margin: 0 }}>Ao aprovar, a obra entra como <b>Em andamento</b>, com {ind.profissional.nome} como Indicador e a data da indicação guardada.</p>
+        <p className="muted small" style={{ margin: 0 }}>Ao aprovar, a obra entra como <b>Em andamento</b>, com {quemNome || 'o profissional escolhido'} como Indicador e a data da indicação guardada.</p>
         <div className="foot">
           <button className="btn danger" disabled={ocupado} onClick={recusar}>Recusar</button>
           <button className="btn primary" disabled={ocupado} onClick={aprovar}>{ligarA ? 'Ligar à obra existente' : 'Aprovar e criar obra'}</button>

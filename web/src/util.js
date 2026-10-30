@@ -77,4 +77,4 @@ export const CANAIS = { whatsapp: 'WhatsApp', ligacao: 'Ligação', visita: 'Vis
 export const MOTIVOS_PERDA = ['Preço', 'Concorrente', 'Desistiu da obra', 'Prazo de entrega', 'Sem retorno', 'Outro']
 
 // WhatsApp da fábrica (mesmo número do telefone fixo)
-export const WHATS_FABRICA = '1637227029'
+export const WHATS_FABRICA = '16992914461'

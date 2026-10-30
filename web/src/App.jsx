@@ -37,6 +37,8 @@ export default function App() {
   // Página pública "Indique uma obra": não exige login
   const indicacao = window.location.hash.match(/^#\/indicar\/([0-9a-f-]{36})/i)
   if (indicacao) return <Indicar token={indicacao[1]} />
+  // Link geral (cartão de visita, cartaz): qualquer profissional, informa nome e telefone
+  if (/^#\/indicar\/?(\?.*)?$/i.test(window.location.hash)) return <Indicar token={null} />
 
   if (sessao === undefined) return <div className="empty">Carregando…</div>
   if (!sessao) return <Login />
