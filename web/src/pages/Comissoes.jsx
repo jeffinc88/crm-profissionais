@@ -10,7 +10,7 @@ const avisar = () => window.dispatchEvent(new Event('crm:atualizar'))
 const ABAS = ['aguardando_recebimento', 'a_pagar', 'paga', 'cancelada']
 
 export default function Comissoes() {
-  const { gerencial } = useSessao()
+  const { gerencial, vendedor } = useSessao()
   const [aba, setAba] = useState('a_pagar')
   const [modal, setModal] = useState(null)
   const { data, erro, carregando, recarregar } = useCarregar(() =>
@@ -31,16 +31,19 @@ export default function Comissoes() {
       <div className="head">
         <div>
           <h1>Gratificações</h1>
-          <p className="sub">Extrato geral. A gratificação só fica liberada para pagamento depois que o Dono da Obra quita o pedido.</p>
+          <p className="sub">{vendedor
+            ? 'Gratificações dos profissionais da sua carteira (só para consulta). A gerência registra quitação e pagamento.'
+            : 'Extrato geral. A gratificação só fica liberada para pagamento depois que o Dono da Obra quita o pedido.'}</p>
         </div>
       </div>
 
-      <div className="kpis">
+      {/* Totais da fábrica: só a gerência vê */}
+      {gerencial && <div className="kpis">
         <div className="kpi"><b>{brl(soma('aguardando_recebimento'))}</b><span>Aguardando o cliente quitar</span></div>
         <div className="kpi"><b>{brl(soma('a_pagar'))}</b><span>A pagar</span></div>
         <div className="kpi"><b>{brl(soma('paga'))}</b><span>Pagas</span></div>
         <div className="kpi"><b>{(data || []).filter((k) => k.divergente && k.status !== 'cancelada').length}</b><span>Com valor divergente</span></div>
-      </div>
+      </div>}
 
       <div className="tabs">
         {ABAS.map((a) => (
@@ -75,10 +78,10 @@ export default function Comissoes() {
               <div className="stack" style={{ alignItems: 'flex-end', gap: 6 }}>
                 <b className="num" style={{ fontSize: '1.15rem' }}>{brl(k.valor)}</b>
                 <div className="acts">
-                  {k.status === 'aguardando_recebimento' && <button className="btn sm" onClick={() => setModal({ tipo: 'quitou', k })}>Cliente quitou</button>}
+                  {!vendedor && k.status === 'aguardando_recebimento' && <button className="btn sm" onClick={() => setModal({ tipo: 'quitou', k })}>Cliente quitou</button>}
                   {gerencial && k.status === 'a_pagar' && <button className="btn sm primary" onClick={() => setModal({ tipo: 'pagar', k })}>Registrar pagamento</button>}
                   {gerencial && ['aguardando_recebimento', 'a_pagar'].includes(k.status) && <button className="btn sm" onClick={() => setModal({ tipo: 'editar', k })}>Ajustar</button>}
-                  {k.comprovante_path && <button className="btn sm" onClick={() => verComprovante(k.comprovante_path)}>Comprovante</button>}
+                  {!vendedor && k.comprovante_path && <button className="btn sm" onClick={() => verComprovante(k.comprovante_path)}>Comprovante</button>}
                 </div>
               </div>
             </div>

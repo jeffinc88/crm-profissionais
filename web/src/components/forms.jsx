@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase, q } from '../supabase'
 import { Modal, Erro, useEnvio } from './ui'
 import Historico from './Historico'
+import { useSessao } from '../App'
 import { CANAIS, STATUS_OBRA, PAPEL, MOTIVOS_PERDA, somaDias, soDigitos, hoje } from '../util'
 
 const avisar = () => window.dispatchEvent(new Event('crm:atualizar'))
@@ -10,15 +11,15 @@ const avisar = () => window.dispatchEvent(new Event('crm:atualizar'))
 export function useProfissionaisLista() {
   const [lista, setLista] = useState([])
   useEffect(() => {
-    supabase.from('crm_profissionais').select('id, nome, apelido, cidade, tipo_comissao_padrao, valor_comissao_padrao')
+    supabase.from('crm_profissionais').select('id, nome, apelido, cidade, telefone, tipo_comissao_padrao, valor_comissao_padrao, responsavel_id')
       .eq('ativo', true).order('nome').then(({ data }) => setLista(data || []))
   }, [])
   return lista
 }
 
-export function SelectProfissional({ value, onChange, lista, vazio = 'Selecione…' }) {
+export function SelectProfissional({ value, onChange, lista, vazio = 'Selecione…', required = false }) {
   return (
-    <select value={value || ''} onChange={(e) => onChange(e.target.value || null)}>
+    <select value={value || ''} onChange={(e) => onChange(e.target.value || null)} required={required}>
       <option value="">{vazio}</option>
       {lista.map((p) => (
         <option key={p.id} value={p.id}>
@@ -102,6 +103,8 @@ export function ProfissionalModal({ inicial, onClose, onDone }) {
   }))
   const { ocupado, erro, enviar } = useEnvio()
   const [duplicados, setDuplicados] = useState(null)
+  const { gerencial, vendedor } = useSessao()
+  const operadores = useOperadores()
   useEffect(() => { supabase.from('crm_categorias').select('*').order('ordem').then(({ data }) => setCats(data || [])) }, [])
   const set = (k) => (e) => { setDuplicados(null); setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }) }
 
@@ -123,6 +126,8 @@ export function ProfissionalModal({ inicial, onClose, onDone }) {
         chave_pix: f.chave_pix || null, data_nascimento: f.data_nascimento || null,
         observacoes: f.observacoes || null, ativo: f.ativo,
       }
+      // Só a gerência define o responsável; vendedor vira responsável do que cadastra (regra no banco)
+      if (gerencial) dados.responsavel_id = f.responsavel_id || null
       const r = inicial?.id
         ? await q(supabase.from('crm_profissionais').update(dados).eq('id', inicial.id).select().single())
         : await q(supabase.from('crm_profissionais').insert(dados).select().single())
@@ -163,6 +168,12 @@ export function ProfissionalModal({ inicial, onClose, onDone }) {
           </label>
         </div>
         <label>Observações<textarea value={f.observacoes || ''} onChange={set('observacoes')} /></label>
+        {gerencial && (
+          <label>Responsável (carteira)
+            <SelectResponsavel value={f.responsavel_id} operadores={operadores} onChange={(v) => setF({ ...f, responsavel_id: v })} />
+          </label>
+        )}
+        {vendedor && !inicial?.id && <div className="alert info small">Você será o responsável por este profissional. Se ele já estiver no CRM, o cadastro é bloqueado e você deve falar com a gerência.</div>}
         {inicial?.id && <label className="check"><input type="checkbox" checked={f.ativo} onChange={set('ativo')} /> Ativo</label>}
         {duplicados && <AvisoDuplicado itens={duplicados.map((p) => ({ id: p.id, link: `#/profissionais/${p.id}`,
           texto: `${p.nome}${p.apelido ? ` (${p.apelido})` : ''} · ${p.motivo}` }))} />}
@@ -178,6 +189,7 @@ export function ProfissionalModal({ inicial, onClose, onDone }) {
 // ---------- Cadastro de Obra ----------
 export function ObraModal({ inicial, profissionalFixo, onClose, onDone }) {
   const lista = useProfissionaisLista()
+  const { vendedor: vendedorObra } = useSessao()
   const [f, setF] = useState(() => ({
     profissional_id: profissionalFixo?.id || null, papel: 'indicador', dono_nome: '', dono_telefone: '',
     dono_documento: '', endereco: '', cidade: '', status: 'em_andamento', motivo_perda: '', previsao_laje: '',
@@ -224,7 +236,7 @@ export function ObraModal({ inicial, profissionalFixo, onClose, onDone }) {
           <label>Profissional
             {profissionalFixo
               ? <input value={profissionalFixo.nome} disabled />
-              : <SelectProfissional value={f.profissional_id} onChange={(v) => setF({ ...f, profissional_id: v })} lista={lista} vazio="Sem profissional" />}
+              : <SelectProfissional value={f.profissional_id} onChange={(v) => setF({ ...f, profissional_id: v })} lista={lista} vazio={vendedorObra ? "Selecione…" : "Sem profissional"} required={vendedorObra} />}
           </label>
           <label>Papel do profissional nesta obra
             <select value={f.papel} onChange={set('papel')}>
@@ -323,5 +335,25 @@ export function AvisoDuplicado({ itens }) {
       </ul>
       Confira antes de salvar. Se for outra pessoa/obra, clique em “Salvar mesmo assim”.
     </div>
+  )
+}
+
+// ---------- Operadores (para mostrar e escolher o responsável da carteira) ----------
+export function useOperadores() {
+  const [lista, setLista] = useState([])
+  useEffect(() => {
+    supabase.from('crm_operadores').select('user_id, nome, perfil, ativo').order('nome').then(({ data }) => setLista(data || []))
+  }, [])
+  return lista
+}
+
+export function SelectResponsavel({ value, onChange, operadores }) {
+  return (
+    <select value={value || ''} onChange={(e) => onChange(e.target.value || null)}>
+      <option value="">Sem responsável (fica com a fábrica)</option>
+      {operadores.filter((o) => o.ativo || o.user_id === value).map((o) => (
+        <option key={o.user_id} value={o.user_id}>{o.nome}{o.perfil === 'vendedor' ? '' : ` (${o.perfil})`}</option>
+      ))}
+    </select>
   )
 }

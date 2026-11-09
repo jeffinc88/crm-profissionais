@@ -111,3 +111,18 @@ Aviso na Agenda poucos dias depois da entrega da laje de uma Obra. Serve também
 Aviso na Agenda para acompanhar uma Obra cadastrada que ainda não chegou à etapa da laje.
 
 > Termo escolhido: o CRM usa sempre **gratificação** (nunca "comissão") para o que a fábrica paga ao profissional. "Comissão" fica reservado para a relação com os representantes, que é outra coisa.
+
+## Carteiras
+
+**Vendedor**:
+Perfil de Operador para representantes e vendedores. Vê e trabalha só a própria Carteira; não vê Painel geral, Conciliação nem Configurações, e lê as gratificações dos seus profissionais sem poder alterá-las.
+
+**Responsável**:
+O Vendedor que cuida de um Profissional. Definido automaticamente para quem cadastra; só o Gerencial transfere.
+_Avoid_: Dono do pedreiro
+
+**Carteira**:
+O conjunto de Profissionais de um mesmo Responsável. A base continua sendo da fábrica.
+
+**Carteira Parada**:
+Profissional com Responsável e sem contato registrado há mais de X dias (padrão 90). Aparece para a gerência decidir se transfere.

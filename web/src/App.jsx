@@ -13,6 +13,7 @@ import Painel from './pages/Painel'
 import Indicar from './pages/Indicar'
 
 const Ctx = createContext(null)
+export const PERFIS = { gerencial: 'Gerencial', operacional: 'Operacional', vendedor: 'Vendedor' }
 export const useSessao = () => useContext(Ctx)
 
 export default function App() {
@@ -52,7 +53,12 @@ export default function App() {
   if (!operador) return <SemAcesso email={sessao.user.email} />
 
   return (
-    <Ctx.Provider value={{ operador, gerencial: operador.perfil === 'gerencial' }}>
+    <Ctx.Provider value={{
+      operador,
+      gerencial: operador.perfil === 'gerencial',
+      vendedor: operador.perfil === 'vendedor',
+      interno: operador.perfil !== 'vendedor',
+    }}>
       <HashRouter>
         <Shell />
       </HashRouter>
@@ -61,7 +67,7 @@ export default function App() {
 }
 
 function Shell() {
-  const { operador, gerencial } = useSessao()
+  const { operador, gerencial, vendedor } = useSessao()
   const [contagem, setContagem] = useState({ agenda: 0, fila: 0, indicacoes: 0 })
 
   const atualizar = useCallback(async () => {
@@ -80,14 +86,15 @@ function Shell() {
     return () => { clearInterval(t); window.removeEventListener('crm:atualizar', atualizar) }
   }, [atualizar])
 
+  // Vendedor (representante) trabalha só a própria carteira: sem Painel geral e sem Conciliação
   const links = [
     { to: '/agenda', label: 'Agenda', ico: '📅', n: contagem.agenda },
-    { to: '/painel', label: 'Painel', ico: '📊' },
-    { to: '/profissionais', label: 'Profissionais', ico: '👷' },
+    !vendedor && { to: '/painel', label: 'Painel', ico: '📊' },
+    { to: '/profissionais', label: vendedor ? 'Minha carteira' : 'Profissionais', ico: '👷' },
     { to: '/obras', label: 'Obras', ico: '🏗️', n: contagem.indicacoes },
-    { to: '/conciliacao', label: 'Conciliação', ico: '🔗', n: contagem.fila },
+    !vendedor && { to: '/conciliacao', label: 'Conciliação', ico: '🔗', n: contagem.fila },
     { to: '/gratificacoes', label: 'Gratificações', ico: '💰' },
-  ]
+  ].filter(Boolean)
 
   return (
     <div className="shell">
@@ -104,7 +111,7 @@ function Shell() {
         ))}
         {gerencial && <NavLink to="/config"><span>Configurações</span></NavLink>}
         <div className="grow" />
-        <div className="me">{operador.nome} · {operador.perfil === 'gerencial' ? 'Gerencial' : 'Operacional'}</div>
+        <div className="me">{operador.nome} · {PERFIS[operador.perfil] || operador.perfil}</div>
         <a href="#/" onClick={(e) => { e.preventDefault(); supabase.auth.signOut() }}><span>Sair</span></a>
       </nav>
 
@@ -112,11 +119,11 @@ function Shell() {
         <Routes>
           <Route path="/" element={<Navigate to="/agenda" replace />} />
           <Route path="/agenda" element={<Agenda />} />
-          <Route path="/painel" element={<Painel />} />
+          <Route path="/painel" element={vendedor ? <Navigate to="/agenda" /> : <Painel />} />
           <Route path="/profissionais" element={<Profissionais />} />
           <Route path="/profissionais/:id" element={<ProfissionalDetalhe />} />
           <Route path="/obras" element={<Obras />} />
-          <Route path="/conciliacao" element={<Conciliacao />} />
+          <Route path="/conciliacao" element={vendedor ? <Navigate to="/agenda" /> : <Conciliacao />} />
           <Route path="/gratificacoes" element={<Comissoes />} />
           <Route path="/config" element={gerencial ? <Config /> : <Navigate to="/agenda" />} />
           <Route path="/indicar/*" element={null} />
@@ -124,7 +131,7 @@ function Shell() {
         </Routes>
       </main>
 
-      <nav className="bottomnav">
+      <nav className="bottomnav" style={{ gridTemplateColumns: `repeat(${links.length}, 1fr)` }}>
         {links.map((l) => (
           <NavLink key={l.to} to={l.to}>
             <span className="ico">{l.ico}</span>{l.label}

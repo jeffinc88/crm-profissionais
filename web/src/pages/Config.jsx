@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase, q } from '../supabase'
+import { PERFIS } from '../App'
 import { useCarregar, Carregando, Erro, useEnvio } from '../components/ui'
 
 export default function Config() {
@@ -26,6 +27,7 @@ export default function Config() {
     enviar(async () => {
       await q(supabase.from('crm_config').update({
         prazo_recompra_dias: Number(f.prazo_recompra_dias), dias_pos_entrega: Number(f.dias_pos_entrega),
+        dias_carteira_parada: Number(f.dias_carteira_parada || 90),
         comissao_profissional_obra: f.comissao_profissional_obra, percentual_padrao: Number(f.percentual_padrao),
       }).eq('id', 1))
       setOk(true); recarregar()
@@ -46,6 +48,7 @@ export default function Config() {
         <div className="grid3">
           <label>Alerta de recompra (dias sem venda)<input type="number" min="1" value={f.prazo_recompra_dias} onChange={set('prazo_recompra_dias')} /></label>
           <label>Pós-entrega (dias após a entrega)<input type="number" min="0" value={f.dias_pos_entrega} onChange={set('dias_pos_entrega')} /></label>
+          <label>Carteira parada (dias sem contato)<input type="number" min="1" value={f.dias_carteira_parada ?? 90} onChange={set('dias_carteira_parada')} /></label>
           <label>Percentual padrão de gratificação (%)<input type="number" step="0.01" min="0" value={f.percentual_padrao} onChange={set('percentual_padrao')} /></label>
         </div>
         <label className="check"><input type="checkbox" checked={f.comissao_profissional_obra} onChange={set('comissao_profissional_obra')} />
@@ -65,7 +68,7 @@ export default function Config() {
           {data.ops.map((o) => (
             <div key={o.user_id} className="row between small" style={{ padding: '4px 0' }}>
               <span>{o.nome}</span>
-              <span className={`badge ${o.perfil === 'gerencial' ? 'info' : ''}`}>{o.perfil === 'gerencial' ? 'Gerencial' : 'Operacional'}{!o.ativo && ' · inativo'}</span>
+              <span className={`badge ${o.perfil === 'gerencial' ? 'info' : ''}`}>{PERFIS[o.perfil] || o.perfil}{!o.ativo && ' · inativo'}</span>
             </div>
           ))}
           <p className="muted small">Para incluir alguém: crie o usuário em Supabase › Authentication e rode o comando de “Adicionar operador” do LEIA-ME.</p>

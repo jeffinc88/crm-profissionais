@@ -1,6 +1,6 @@
 -- Rodar no SQL Editor do Supabase DEPOIS de criar o usuário em
 -- Authentication › Users › Add user (e-mail + senha, "Auto Confirm User").
--- Troque o e-mail, o nome e o perfil ('gerencial' ou 'operacional').
+-- Troque o e-mail, o nome e o perfil ('gerencial', 'operacional' ou 'vendedor').
 
 insert into public.crm_operadores (user_id, nome, perfil)
 select id, 'Jefferson', 'gerencial'

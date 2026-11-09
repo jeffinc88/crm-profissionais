@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { supabase, q } from '../supabase'
 import { useCarregar, Carregando, Modal, Erro, useEnvio } from '../components/ui'
-import { SelectProfissional, useProfissionaisLista } from '../components/forms'
+import { SelectProfissional, useProfissionaisLista, useOperadores } from '../components/forms'
 import { brl, dataBR, formataTelefone, PAPEL, STATUS_OBRA } from '../util'
 
 const avisar = () => window.dispatchEvent(new Event('crm:atualizar'))
@@ -13,7 +13,7 @@ export default function Conciliacao() {
     const [fila, usadas, obras] = await Promise.all([
       q(supabase.from('crm_v_fila_conciliacao').select('*').order('data_fechamento')),
       q(supabase.from('crm_pedidos_app').select('obra_id').not('obra_id', 'is', null)),
-      q(supabase.from('crm_obras').select('*, profissional:crm_profissionais(id, nome, tipo_comissao_padrao, valor_comissao_padrao)')
+      q(supabase.from('crm_obras').select('*, profissional:crm_profissionais(id, nome, tipo_comissao_padrao, valor_comissao_padrao, responsavel_id)')
         .neq('status', 'perdida').order('created_at', { ascending: false })),
     ])
     const ocupadas = new Set(usadas.map((u) => u.obra_id))
@@ -71,6 +71,7 @@ export default function Conciliacao() {
 }
 
 function ConciliarModal({ pedido, obrasLivres, onClose, onDone }) {
+  const operadores = useOperadores()
   const lista = useProfissionaisLista()
   const sugeridas = new Set((pedido.sugestoes || []).map((s) => s.obra_id))
   const ordenadas = useMemo(
@@ -174,6 +175,12 @@ function ConciliarModal({ pedido, obrasLivres, onClose, onDone }) {
             </div>
             {tipoFinal === 'percentual' && <div className="muted small">Calculada sobre os produtos ({brl(pedido.valor_produtos)}), sem o frete.</div>}
             {diverge && <div className="alert warn">O valor combinado na obra era {brl(combinado)}, mas o pedido traz {brl(valorPrevisto)}. A gratificação será marcada como <b>divergente</b> para o Gerencial revisar.</div>}
+            {prof?.responsavel_id && (
+              <div className="alert info">
+                <b>Carteira de {operadores.find((o) => o.user_id === prof.responsavel_id)?.nome || 'um vendedor'}:</b> pela regra das carteiras,
+                o representante responsável recebe <b>comissão reduzida</b> nesta venda (o valor dele é calculado fora do CRM).
+              </div>
+            )}
             {!pedido.originado_crm && <div className="alert bad"><b>Profissional omitido:</b> o orçamento não foi marcado como vindo de profissional. O profissional recebe a gratificação e o representante <b>não recebe por esta venda</b>.</div>}
           </>
         ) : prof ? (

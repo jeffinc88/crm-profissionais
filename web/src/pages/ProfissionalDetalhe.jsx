@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { supabase, q } from '../supabase'
 import { useCarregar, Carregando, BotaoWhats, Modal } from '../components/ui'
-import { ContatoModal, ProfissionalModal, ObraModal } from '../components/forms'
+import { ContatoModal, ProfissionalModal, ObraModal, useOperadores } from '../components/forms'
+import { useSessao } from '../App'
 import { brl, dataBR, diaMes, formataTelefone, PAPEL, CANAIS } from '../util'
 import { CorStatusObra, CorStatusComissao } from './Obras'
 import Historico from '../components/Historico'
 import { linkWhats } from '../util'
 
 export default function ProfissionalDetalhe() {
+  const { operador } = useSessao()
+  const operadores = useOperadores()
   const { id } = useParams()
   const [aba, setAba] = useState('obras')
   const [modal, setModal] = useState(null)
@@ -36,6 +39,9 @@ export default function ProfissionalDetalhe() {
             <span>{p.cidade || '—'}</span>·<span className="num">{formataTelefone(p.telefone)}</span>
             {p.data_nascimento && <>·<span>🎂 {diaMes(p.data_nascimento)}</span></>}
             {!p.ativo && <span className="badge">Inativo</span>}
+            <span className={`badge ${p.responsavel_id ? 'ok' : ''}`}>👤 {p.responsavel_id
+              ? (p.responsavel_id === operador.user_id ? 'Sua carteira' : `Carteira de ${operadores.find((o) => o.user_id === p.responsavel_id)?.nome || '—'}`)
+              : 'Sem responsável'}</span>
           </div>
         </div>
         <div className="row">
