@@ -17,7 +17,7 @@ const FILTROS = ['abertos', 'novo', 'em_atendimento', 'orcado', 'virou_pedido', 
 const ABERTOS = ['novo', 'em_atendimento', 'orcado']
 const avisar = () => window.dispatchEvent(new Event('crm:atualizar'))
 
-export const LINK_CALC_VENDEDOR = 'https://carvalholajes.com.br/calculadora/?interno=cv7k2m'
+export const LINK_CALC_VENDEDOR = 'https://carvalholajes.com.br/vendedor'
 
 export default function Leads() {
   const [filtro, setFiltro] = useState('abertos')
