@@ -11,6 +11,7 @@ import Comissoes from './pages/Comissoes'
 import Config from './pages/Config'
 import Painel from './pages/Painel'
 import Indicar from './pages/Indicar'
+import Leads from './pages/Leads'
 
 const Ctx = createContext(null)
 export const PERFIS = { gerencial: 'Gerencial', operacional: 'Operacional', vendedor: 'Vendedor' }
@@ -68,15 +69,16 @@ export default function App() {
 
 function Shell() {
   const { operador, gerencial, vendedor } = useSessao()
-  const [contagem, setContagem] = useState({ agenda: 0, fila: 0, indicacoes: 0 })
+  const [contagem, setContagem] = useState({ agenda: 0, fila: 0, indicacoes: 0, leads: 0 })
 
   const atualizar = useCallback(async () => {
-    const [a, f, i] = await Promise.all([
+    const [a, f, i, l] = await Promise.all([
       supabase.from('crm_v_agenda').select('tipo', { count: 'exact', head: true }),
       supabase.from('crm_v_fila_conciliacao').select('id', { count: 'exact', head: true }),
       supabase.from('crm_indicacoes').select('id', { count: 'exact', head: true }).eq('status', 'pendente'),
+      supabase.from('crm_leads_site').select('id', { count: 'exact', head: true }).eq('status', 'novo'),
     ])
-    setContagem({ agenda: a.count || 0, fila: f.count || 0, indicacoes: i.count || 0 })
+    setContagem({ agenda: a.count || 0, fila: f.count || 0, indicacoes: i.count || 0, leads: l.count || 0 })
   }, [])
 
   useEffect(() => {
@@ -92,6 +94,7 @@ function Shell() {
     !vendedor && { to: '/painel', label: 'Painel', ico: '📊' },
     { to: '/profissionais', label: vendedor ? 'Minha carteira' : 'Profissionais', ico: '👷' },
     { to: '/obras', label: 'Obras', ico: '🏗️', n: contagem.indicacoes },
+    { to: '/leads', label: vendedor ? 'Meus leads' : 'Leads', ico: '🧮', n: contagem.leads },
     !vendedor && { to: '/conciliacao', label: 'Conciliação', ico: '🔗', n: contagem.fila },
     { to: '/gratificacoes', label: 'Gratificações', ico: '💰' },
   ].filter(Boolean)
@@ -123,6 +126,7 @@ function Shell() {
           <Route path="/profissionais" element={<Profissionais />} />
           <Route path="/profissionais/:id" element={<ProfissionalDetalhe />} />
           <Route path="/obras" element={<Obras />} />
+          <Route path="/leads" element={<Leads />} />
           <Route path="/conciliacao" element={vendedor ? <Navigate to="/agenda" /> : <Conciliacao />} />
           <Route path="/gratificacoes" element={<Comissoes />} />
           <Route path="/config" element={gerencial ? <Config /> : <Navigate to="/agenda" />} />
