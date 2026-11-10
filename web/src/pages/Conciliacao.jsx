@@ -55,6 +55,7 @@ export default function Conciliacao() {
                   Fechado em {dataBR(p.data_fechamento)} · vendedor {p.vendedor_nome || '—'} · {formataTelefone(p.cliente_telefone)} {p.cidade && `· ${p.cidade}`}
                   {p.profissional_informado && <> · profissional informado: <b>{p.profissional_informado}</b></>}
                 </div>
+                {p.motivo_fila && <div className="small" style={{ color: 'var(--warn)' }}>⚠️ {p.motivo_fila}</div>}
                 {p.sugestoes?.length > 0 && <div className="small">💡 {p.sugestoes.length} obra(s) do CRM com o mesmo CPF/telefone do cliente</div>}
               </div>
               <div className="acts">
@@ -79,8 +80,10 @@ function ConciliarModal({ pedido, obrasLivres, onClose, onDone }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [obrasLivres])
   const [modo, setModo] = useState(sugeridas.size ? 'existente' : 'nova')
-  const [obraId, setObraId] = useState(ordenadas.find((o) => sugeridas.has(o.id))?.id || '')
-  const [profId, setProfId] = useState(null)
+  const [obraId, setObraId] = useState(
+    (pedido.app_obra_id && ordenadas.some((o) => o.id === pedido.app_obra_id) && pedido.app_obra_id)
+    || ordenadas.find((o) => sugeridas.has(o.id))?.id || '')
+  const [profId, setProfId] = useState(pedido.profissional_id || null)
   const [papel, setPapel] = useState('indicador')
   const [tipo, setTipo] = useState(Number(pedido.valor_outras_despesas) > 0 ? 'fixa' : '')
   const [valorFixo, setValorFixo] = useState(Number(pedido.valor_outras_despesas) > 0 ? pedido.valor_outras_despesas : '')

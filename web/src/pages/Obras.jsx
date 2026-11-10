@@ -159,6 +159,7 @@ function Quadro({ obras, onAbrir, onMover }) {
                 </div>
                 {o.origem_cadastro === 'link_indicacao' && <span className="badge info" style={{ marginTop: 4 }}>via link</span>}
                 {o.origem_cadastro === 'whatsapp' && <span className="badge info" style={{ marginTop: 4 }}>via WhatsApp</span>}
+                {o.origem_cadastro === 'app' && <span className="badge info" style={{ marginTop: 4 }}>via orçamento</span>}
                 {/* No celular não dá para arrastar: menu para mover */}
                 <select value="" onClick={(e) => e.stopPropagation()} onChange={(e) => e.target.value && onMover(o, e.target.value)} aria-label="Mover obra">
                   <option value="">Mover para…</option>
