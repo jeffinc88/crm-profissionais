@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, q } from '../supabase'
+import { useSessao } from '../App'
 import { useCarregar, Carregando, Modal, Erro, useEnvio, BotaoWhats } from '../components/ui'
 import { ObraModal, buscarObrasParecidas, SelectProfissional, useProfissionaisLista, AvisoDuplicado } from '../components/forms'
 import { soDigitos } from '../util'
@@ -28,7 +29,7 @@ export default function Obras() {
   const { data, erro, carregando, recarregar } = useCarregar(async () => {
     const [obras, indicacoes] = await Promise.all([
       q(supabase.from('crm_obras').select('*, profissional:crm_profissionais(id, nome, apelido)').order('created_at', { ascending: false })),
-      q(supabase.from('crm_indicacoes').select('*, profissional:crm_profissionais(id, nome, apelido, telefone)').eq('status', 'pendente').order('recebida_em')),
+      q(supabase.from('crm_indicacoes').select('*, profissional:crm_profissionais(id, nome, apelido, telefone, responsavel_id), cartao:crm_operadores!vendedor_cartao_id(user_id, nome)').eq('status', 'pendente').order('recebida_em')),
     ])
     return { obras, indicacoes }
   })
@@ -219,6 +220,7 @@ function Indicacoes({ itens, onMudou }) {
                   ? <Link to={`/profissionais/${i.profissional.id}`}>{i.profissional.nome}</Link>
                   : <><b>{i.indicador_nome}</b> ({formataTelefone(i.indicador_telefone)}) <span className="badge warn">sem cadastro</span></>} em {new Date(i.recebida_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</span>
                 {i.origem === 'link_geral' && <span className="badge">link geral</span>}
+                {i.vendedor_cartao_id && <span className="badge ok">🪪 cartão {i.cartao?.nome ? `do ${i.cartao.nome.split(' ')[0]}` : 'de vendedor'}</span>}
               </div>
               <div className="small">{[i.endereco, i.cidade].filter(Boolean).join(' — ') || 'Sem endereço'} · {formataTelefone(i.dono_telefone)}</div>
               <div className="muted small">{[i.etapa && `Etapa: ${i.etapa}`, i.previsao_laje && `Laje: ${i.previsao_laje}`].filter(Boolean).join(' · ')}</div>
@@ -245,10 +247,20 @@ function RevisarIndicacao({ ind, onClose, onDone }) {
   const [profId, setProfId] = useState(ind.profissional?.id || null)
   const prof = ind.profissional || (lista || []).find((p) => p.id === profId)
   const quemNome = prof?.nome || ind.indicador_nome
+  const { gerencial } = useSessao()
+  const vendCartao = ind.vendedor_cartao_id
+  const nomeCartao = ind.cartao?.nome?.split(' ')[0] || 'vendedor'
+  // Regra das carteiras: profissional sem responsável → sugerir quem entregou o cartão (gerência confirma)
+  const podeSugerir = gerencial && vendCartao && prof && !prof.responsavel_id
+  const [darCarteira, setDarCarteira] = useState(true)
+  const conflito = vendCartao && prof?.responsavel_id && prof.responsavel_id !== vendCartao
 
   const aprovar = () => enviar(async () => {
     if (!profId) throw new Error('Escolha quem indicou. Se a pessoa ainda não tem cadastro, cadastre em Profissionais e volte aqui.')
     await q(supabase.rpc('crm_aprovar_indicacao', { p_indicacao_id: ind.id, p_obra_existente: ligarA || null, p_profissional_id: profId }))
+    if (podeSugerir && darCarteira) {
+      await q(supabase.from('crm_profissionais').update({ responsavel_id: vendCartao }).eq('id', profId))
+    }
     onDone(); onClose()
   })
   const recusar = () => enviar(async () => {
@@ -268,6 +280,18 @@ function RevisarIndicacao({ ind, onClose, onDone }) {
           </div>
         )}
         <div className="small"><b>{ind.dono_nome}</b> · {formataTelefone(ind.dono_telefone)}<br />{[ind.endereco, ind.cidade].filter(Boolean).join(' — ')}</div>
+        {vendCartao && (
+          <div className="alert info">
+            🪪 Quem indicou disse que recebeu o cartão do <b>{nomeCartao}</b>.
+            {podeSugerir && (
+              <label className="check" style={{ marginTop: 8 }}>
+                <input type="checkbox" checked={darCarteira} onChange={(e) => setDarCarteira(e.target.checked)} />
+                Colocar {prof.nome} na carteira do {nomeCartao}
+              </label>
+            )}
+            {conflito && <div style={{ marginTop: 6 }}><b>Atenção:</b> {prof.nome} já é da carteira de outro vendedor. Nada muda sozinho; se quiser transferir, use Editar no cadastro dele.</div>}
+          </div>
+        )}
         {parecidas?.length > 0 && (
           <div className="alert warn">
             <b>Já existe obra com este telefone.</b> Pode ser a mesma:

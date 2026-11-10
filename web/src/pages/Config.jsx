@@ -65,15 +65,50 @@ export default function Config() {
         </div>
         <div className="card">
           <h2>Operadores</h2>
-          {data.ops.map((o) => (
-            <div key={o.user_id} className="row between small" style={{ padding: '4px 0' }}>
-              <span>{o.nome}</span>
-              <span className={`badge ${o.perfil === 'gerencial' ? 'info' : ''}`}>{PERFIS[o.perfil] || o.perfil}{!o.ativo && ' · inativo'}</span>
-            </div>
-          ))}
+          {data.ops.map((o) => <OperadorLinha key={o.user_id} o={o} base={baseLink(f)} onDone={recarregar} />)}
+          <p className="muted small">Marque “Entrega cartão de visita” para o vendedor aparecer na pergunta “Quem te entregou o cartão?” da página de indicação. Os cartões já impressos continuam valendo.</p>
           <p className="muted small">Para incluir alguém: crie o usuário em Supabase › Authentication e rode o comando de “Adicionar operador” do LEIA-ME.</p>
         </div>
       </div>
     </>
+  )
+}
+
+const baseLink = (cfg) => ((cfg.link_publico || '').trim().replace(/\/+$/, '') || (window.location.origin + window.location.pathname.replace(/\/+$/, '')))
+
+// Linha do operador: código do cartão de visita e se aparece na pergunta "Quem te entregou o cartão?"
+function OperadorLinha({ o, base, onDone }) {
+  const [codigo, setCodigo] = useState(o.codigo || '')
+  const [noCartao, setNoCartao] = useState(!!o.no_cartao)
+  const [copiado, setCopiado] = useState(false)
+  const { ocupado, erro, enviar } = useEnvio()
+  const limpo = codigo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
+  const mudou = limpo !== (o.codigo || '') || noCartao !== !!o.no_cartao
+  const link = limpo ? `${base}/#/indicar?v=${limpo}` : ''
+  const salvar = () => enviar(async () => {
+    if (noCartao && !limpo) throw new Error('Defina um código para quem aparece no cartão.')
+    await q(supabase.from('crm_operadores').update({ codigo: limpo || null, no_cartao: noCartao }).eq('user_id', o.user_id))
+    onDone()
+  })
+  const copiar = async () => { try { await navigator.clipboard.writeText(link); setCopiado(true); setTimeout(() => setCopiado(false), 1500) } catch {} }
+  return (
+    <div className="op-linha">
+      <div className="row between small">
+        <b>{o.nome}</b>
+        <span className={`badge ${o.perfil === 'gerencial' ? 'info' : ''}`}>{PERFIS[o.perfil] || o.perfil}{!o.ativo && ' · inativo'}</span>
+      </div>
+      <div className="row small" style={{ gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+        <label className="check"><input type="checkbox" checked={noCartao} onChange={(e) => setNoCartao(e.target.checked)} /> Entrega cartão de visita</label>
+        <input style={{ width: 120 }} value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="código" aria-label="Código do cartão" />
+        {mudou && <button className="btn" type="button" disabled={ocupado} onClick={salvar}>Salvar</button>}
+      </div>
+      {link && noCartao && !mudou && (
+        <div className="small muted" style={{ marginTop: 4 }}>
+          Link para os próximos cartões dele: <code>{link.replace(/^https?:\/\//, '')}</code>{' '}
+          <button className="btn small-btn" type="button" onClick={copiar}>{copiado ? 'Copiado' : 'Copiar'}</button>
+        </div>
+      )}
+      {erro && <div className="alert bad small" style={{ marginTop: 4 }}>{erro}</div>}
+    </div>
   )
 }

@@ -8,7 +8,13 @@ import { linkWhats, WHATS_FABRICA } from '../util'
 // onde a pessoa informa o próprio nome e telefone. No link geral não se fala em
 // gratificação: o cartão também chega à mão do dono da obra.
 const ETAPAS = ['Começando', 'Levantando paredes', 'Pronta pra laje']
-const VAZIO = { eu: '', meuTel: '', dono: '', telefone: '', onde: '', etapa: '' }
+const VAZIO = { eu: '', meuTel: '', vend: '', dono: '', telefone: '', onde: '', etapa: '' }
+
+// Código do vendedor no próprio link (QR por vendedor): #/indicar?v=paulo
+const codigoDoLink = () => {
+  const m = window.location.hash.match(/[?&]v=([a-z0-9-]+)/i)
+  return m ? m[1].toLowerCase() : ''
+}
 
 // No link geral, o celular lembra quem é o profissional depois da primeira indicação
 const CHAVE = 'crm:indicador'
@@ -19,7 +25,14 @@ export default function Indicar({ token }) {
   const geral = !token
   const [nome, setNome] = useState(geral ? '' : undefined)
   const [lembrado, setLembrado] = useState(() => (geral ? lerEu() : null))
-  const [f, setF] = useState(() => ({ ...VAZIO, ...(geral ? lerEu() || {} : {}) }))
+  const [f, setF] = useState(() => ({ ...VAZIO, ...(geral ? lerEu() || {} : {}), ...(geral && codigoDoLink() ? { vend: codigoDoLink() } : {}) }))
+  // "Quem te entregou o cartão?" só na primeira vez e só se o link não trouxer o vendedor
+  const perguntarCartao = geral && !lembrado && !codigoDoLink()
+  const [vendedores, setVendedores] = useState([])
+  useEffect(() => {
+    if (!perguntarCartao) return
+    supabase.rpc('crm_vendedores_cartao').then(({ data }) => setVendedores(data || []))
+  }, [perguntarCartao])
   const [estado, setEstado] = useState('form') // form | enviando | ok
   const [erro, setErro] = useState('')
 
@@ -48,13 +61,14 @@ export default function Indicar({ token }) {
       ? await supabase.rpc('crm_enviar_indicacao_geral', {
           p_indicador_nome: f.eu, p_indicador_telefone: f.meuTel,
           p_dono_nome: f.dono, p_dono_telefone: f.telefone, p_endereco: f.onde, p_etapa: f.etapa,
+          p_vendedor: f.vend && f.vend !== 'nao_lembro' ? f.vend : null,
         })
       : await supabase.rpc('crm_enviar_indicacao', {
           p_token: token, p_dono_nome: f.dono, p_dono_telefone: f.telefone, p_endereco: f.onde,
           p_cidade: '', p_etapa: f.etapa, p_previsao_laje: '', p_observacao: '',
         })
     if (error) { setErro(error.message); setEstado('form'); return }
-    if (geral) { const eu = { eu: f.eu.trim(), meuTel: f.meuTel }; gravarEu(eu); setLembrado(eu) }
+    if (geral) { const eu = { eu: f.eu.trim(), meuTel: f.meuTel, vend: f.vend }; gravarEu(eu); setLembrado(eu) }
     setEstado('ok')
   }
 
@@ -86,7 +100,7 @@ export default function Indicar({ token }) {
               ? 'Recebemos a indicação. A fábrica vai falar com o dono da obra e te dá um retorno.'
               : 'A fábrica vai ligar pro dono da obra. Fechou, sua gratificação tá garantida.'}
           </p>
-          <button className="btn grande" onClick={() => { setF(geral ? { ...VAZIO, eu: f.eu, meuTel: f.meuTel } : VAZIO); setEstado('form') }}>Indicar outra obra</button>
+          <button className="btn grande" onClick={() => { setF(geral ? { ...VAZIO, eu: f.eu, meuTel: f.meuTel, vend: f.vend } : VAZIO); setEstado('form') }}>Indicar outra obra</button>
           {geral && <AtalhoTelaInicial />}
         </div>
       )}
@@ -103,6 +117,17 @@ export default function Indicar({ token }) {
               <div className="grid2">
                 <label>Seu nome<input value={f.eu} onChange={set('eu')} required autoComplete="name" /></label>
                 <label>Seu telefone<input value={f.meuTel} onChange={set('meuTel')} required inputMode="tel" autoComplete="tel" placeholder="(16) 99999-9999" /></label>
+              </div>
+            )}
+            {perguntarCartao && vendedores.length > 0 && (
+              <div>
+                <div className="lbl-etapa">Quem te entregou o cartão? <span className="opc">(opcional)</span></div>
+                <div className="etapas">
+                  {[...vendedores, { codigo: 'nao_lembro', nome: 'Não lembro' }].map((v) => (
+                    <button type="button" key={v.codigo} className={f.vend === v.codigo ? 'on' : ''}
+                      onClick={() => setF({ ...f, vend: f.vend === v.codigo ? '' : v.codigo })}>{v.nome}</button>
+                  ))}
+                </div>
               </div>
             )}
             <label>Nome do dono da obra<input value={f.dono} onChange={set('dono')} required autoComplete="off" /></label>

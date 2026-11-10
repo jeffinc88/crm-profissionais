@@ -242,3 +242,6 @@ details.tabela summary { cursor: pointer; font-size: .8rem; color: var(--ink-2);
 .ou::before, .ou::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 
 .linkbtn { background: none; border: 0; padding: 0; font: inherit; color: var(--ink); text-decoration: underline; cursor: pointer; }
+.op-linha { padding: 8px 0; border-bottom: 1px solid var(--line, #e5e7eb); }
+.op-linha:last-of-type { border-bottom: 0; }
+.small-btn { padding: 2px 8px; font-size: .78rem; }
